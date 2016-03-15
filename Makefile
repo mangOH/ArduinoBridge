@@ -6,8 +6,8 @@ all: $(TARGETS)
 $(TARGETS):
 	export TARGET=$@ ; \
 	mkapp -v -t $@ \
-		  -i ../SwiMangohDataRouter \
-		  SwiMangohBridge.adef
+		  -i ../DataRouter \
+		  arduinoBridge.adef
 
 clean:
 	rm -rf _build_* *.ar7 *.wp7 *.ar86 *.wp85 *.localhost

@@ -1,0 +1,35 @@
+version: 1.0.0
+sandboxed: true
+start: auto
+executables:
+{
+    ArduinoBridge = ( BridgeComponent )
+}
+
+processes:
+{
+    run:
+    {
+        ( ArduinoBridge )
+    }
+
+    envVars:
+    {
+        LE_LOG_LEVEL=DEBUG
+    }
+
+    maxCoreDumpFileBytes: 512K
+}
+
+bindings:
+{
+    ArduinoBridge.BridgeComponent.dataRouter -> DataRouter.dataRouter
+}
+
+requires:
+{
+    device:
+    {
+        [rw]    /dev/ttyUSB0 /dev/ttyUSB0
+    }
+}

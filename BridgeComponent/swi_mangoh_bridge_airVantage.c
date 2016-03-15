@@ -137,7 +137,7 @@ static int swi_mangoh_bridge_air_vantage_subscribe(void* param, const unsigned c
         dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
-    	    LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
+            LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
             res = LE_FAULT;
             goto cleanup;
         }
@@ -195,7 +195,7 @@ static int swi_mangoh_bridge_air_vantage_pushBoolean(void* param, const unsigned
         dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
-    	    LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
+            LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
             res = LE_FAULT;
             goto cleanup;
         }
@@ -253,7 +253,7 @@ static int swi_mangoh_bridge_air_vantage_pushInteger(void* param, const unsigned
         dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
-    	    LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
+            LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
             res = LE_FAULT;
             goto cleanup;
         }
@@ -320,7 +320,7 @@ static int swi_mangoh_bridge_air_vantage_pushFloat(void* param, const unsigned c
         dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
-    	    LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
+            LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
             res = LE_FAULT;
             goto cleanup;
         }
@@ -378,7 +378,7 @@ static int swi_mangoh_bridge_air_vantage_pushString(void* param, const unsigned 
         dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
-    	    LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
+            LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
             res = LE_FAULT;
             goto cleanup;
         }
@@ -481,7 +481,7 @@ static void swi_mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t t
     LE_ASSERT(key);
 
     LE_DEBUG("--> key('%s')", key);
-    
+
     switch (type)
     {
     case DATAROUTER_BOOLEAN:
@@ -558,7 +558,7 @@ int swi_mangoh_bridge_air_vantage_init(swi_mangoh_bridge_air_vantage_t* airVanta
     LE_DEBUG("init");
 
     airVantage->bridge = bridge;
-    airVantage->dataUpdateHandlers = le_hashmap_Create(SWI_MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_NAME, SWI_MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_SIZE, 
+    airVantage->dataUpdateHandlers = le_hashmap_Create(SWI_MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_NAME, SWI_MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_SIZE,
         le_hashmap_HashString, le_hashmap_EqualsString);
 
     res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_SESSION_START, airVantage, swi_mangoh_bridge_air_vantage_sessionStart);

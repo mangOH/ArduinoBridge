@@ -34,7 +34,7 @@
 #define SWI_MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN                          32
 #define SWI_MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN                     32
 #define SWI_MANGOH_BRIDGE_AIR_VANTAGE_RX_BUFF_SIZE                           0x4000
-#define SWI_MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN    			     256
+#define SWI_MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN                            256
 
 //------------------------------------------------------------------------------------------------------------------
 /*
