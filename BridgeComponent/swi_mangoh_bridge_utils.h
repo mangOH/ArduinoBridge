@@ -12,8 +12,8 @@
 #ifndef SWI_MANGOH_BRIDGE_UTILS_INCLUDE_GUARD
 #define SWI_MANGOH_BRIDGE_UTILS_INCLUDE_GUARD
 
-#define SWI_MANGOH_BRIDGE_UTILS_READ_FD 				0
-#define SWI_MANGOH_BRIDGE_UTILS_WRITE_FD				1
+#define SWI_MANGOH_BRIDGE_UTILS_READ_FD                 0
+#define SWI_MANGOH_BRIDGE_UTILS_WRITE_FD                1
 
 char* strreplace(const char*, const char*, const char*);
 pid_t popen2(char**, int*, int*);

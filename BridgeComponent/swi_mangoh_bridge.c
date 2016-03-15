@@ -944,7 +944,7 @@ COMPONENT_INIT
     res = swi_mangoh_bridge_init(&bridge);
     if (res != LE_OK)
     {
-    	LE_ERROR("ERROR swi_mangoh_bridge_init() failed(%d)", res);
+        LE_ERROR("ERROR swi_mangoh_bridge_init() failed(%d)", res);
         goto cleanup;
     }
 

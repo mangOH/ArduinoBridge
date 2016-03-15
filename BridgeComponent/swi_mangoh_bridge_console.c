@@ -190,7 +190,7 @@ int swi_mangoh_bridge_console_init(swi_mangoh_bridge_console_t* console, void* b
 
     swi_mangoh_bridge_tcp_client_init(&console->clients, true);
 
-    res = swi_mangoh_bridge_tcp_server_start(&console->server, SWI_MANGOH_BRIDGE_CONSOLE_SERVER_IP_ADDR, 
+    res = swi_mangoh_bridge_tcp_server_start(&console->server, SWI_MANGOH_BRIDGE_CONSOLE_SERVER_IP_ADDR,
             SWI_MANGOH_BRIDGE_CONSOLE_SERVER_PORT, SWI_MANGOH_BRIDGE_CONSOLE_SERVER_BACKLOG);
     if (res != LE_OK)
     {
