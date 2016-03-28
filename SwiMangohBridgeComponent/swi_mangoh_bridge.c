@@ -20,7 +20,7 @@ static int swi_mangoh_bridge_excute_runners(swi_mangoh_bridge_t*);
 static int swi_mangoh_bridge_excute_resets(swi_mangoh_bridge_t*);
 static void swi_mangoh_bridge_eventHandler(int, short);
 
-static void swi_mangoh_bridge_SigTermEventHandler(int sigNum);
+static void swi_mangoh_bridge_SigTermEventHandler(int);
 static int swi_mangoh_bridge_start(swi_mangoh_bridge_t*);
 static int swi_mangoh_bridge_stop(swi_mangoh_bridge_t*);
 static int swi_mangoh_bridge_init(swi_mangoh_bridge_t*);
