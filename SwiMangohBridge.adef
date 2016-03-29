@@ -23,7 +23,7 @@ processes:
 
 bindings:
 {
-    SwiMangohBridge.SwiMangohBridgeComponent.dataRouterApi -> SwiMangohDataRouter.dataRouterApi
+    SwiMangohBridge.SwiMangohBridgeComponent.dataRouter -> SwiMangohDataRouter.dataRouter
 }
 
 requires:
