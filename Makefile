@@ -10,4 +10,4 @@ $(TARGETS):
 		  arduinoBridge.adef
 
 clean:
-	rm -rf _build_* *.ar7 *.wp7 *.ar86 *.wp85 *.localhost
+	rm -rf _build_* *.ar7 *.wp7 *.ar86 *.wp85 *.wp85.update *.localhost
