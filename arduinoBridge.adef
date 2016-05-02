@@ -23,7 +23,7 @@ processes:
 
 bindings:
 {
-    ArduinoBridge.BridgeComponent.dataRouter -> DataRouter.dataRouter
+    ArduinoBridge.BridgeComponent.dataRouter -> dataRouter.dataRouter
 }
 
 requires:
