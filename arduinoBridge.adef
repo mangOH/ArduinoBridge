@@ -3,14 +3,14 @@ sandboxed: true
 start: auto
 executables:
 {
-    ArduinoBridge = ( BridgeComponent )
+    arduinoBridge = ( bridgeComponent )
 }
 
 processes:
 {
     run:
     {
-        ( ArduinoBridge )
+        ( arduinoBridge )
     }
 
     envVars:
@@ -23,7 +23,7 @@ processes:
 
 bindings:
 {
-    ArduinoBridge.BridgeComponent.dataRouter -> dataRouter.dataRouter
+    arduinoBridge.bridgeComponent.dataRouter -> dataRouter.dataRouter
 }
 
 requires:
