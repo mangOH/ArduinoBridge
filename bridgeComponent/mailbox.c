@@ -3,11 +3,11 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "legato.h"
-#include "swi_mangoh_bridge_tcpClient.h"
-#include "swi_mangoh_bridge_tcpServer.h"
-#include "swi_mangoh_bridge.h"
-#include "swi_mangoh_bridge_json.h"
-#include "swi_mangoh_bridge_mailbox.h"
+#include "tcpClient.h"
+#include "tcpServer.h"
+#include "bridge.h"
+#include "json.h"
+#include "mailbox.h"
 
 static int swi_mangoh_bridge_mailbox_send(void*, const unsigned char*, uint32_t);
 static int swi_mangoh_bridge_mailbox_send_json(void*, const unsigned char*, uint32_t);

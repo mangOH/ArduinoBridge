@@ -1,8 +1,8 @@
 #include <arpa/inet.h>
 #include "legato.h"
-#include "swi_mangoh_bridge_utils.h"
-#include "swi_mangoh_bridge_processes.h"
-#include "swi_mangoh_bridge.h"
+#include "utils.h"
+#include "processes.h"
+#include "bridge.h"
 
 static int swi_mangoh_bridge_processes_run(void*, const unsigned char*, uint32_t);
 static int swi_mangoh_bridge_processes_running(void*, const unsigned char*, uint32_t);

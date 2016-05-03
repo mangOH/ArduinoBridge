@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_tcpServer.h
+ * @file tcpServer.h
  *
  * Arduino bridge TCP server module.
  *
@@ -9,7 +9,7 @@
  *
  * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
  */
-#include "swi_mangoh_bridge_tcpClient.h"
+#include "tcpClient.h"
 
 #ifndef SWI_MANGOH_BRIDGE_TCP_SERVER_INCLUDE_GUARD
 #define SWI_MANGOH_BRIDGE_TCP_SERVER_INCLUDE_GUARD

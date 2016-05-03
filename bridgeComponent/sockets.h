@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_sockets.h
+ * @file sockets.h
  *
  * Arduino bridge sockets sub-module.
  *

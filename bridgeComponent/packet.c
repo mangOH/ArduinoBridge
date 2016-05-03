@@ -1,5 +1,5 @@
 #include <arpa/inet.h>
-#include "swi_mangoh_bridge_packet.h"
+#include "packet.h"
 
 unsigned short swi_mangoh_bridge_packet_crcUpdate(unsigned short crc, const unsigned char* data, unsigned int len)
 {

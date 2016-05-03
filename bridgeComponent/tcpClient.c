@@ -1,6 +1,6 @@
 #include "legato.h"
-#include "swi_mangoh_bridge_packet.h"
-#include "swi_mangoh_bridge_tcpClient.h"
+#include "packet.h"
+#include "tcpClient.h"
 
 static int swi_mangoh_bridge_tcp_client_close(swi_mangoh_bridge_tcp_client_info_t*);
 static int swi_mangoh_bridge_tcp_client_broadcast(swi_mangoh_bridge_tcp_client_t*, uint32_t);

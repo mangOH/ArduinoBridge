@@ -12,7 +12,7 @@
  */
 #include "legato.h"
 #include "interfaces.h"
-#include "swi_mangoh_bridge_packet.h"
+#include "packet.h"
 
 #ifndef SWI_MANGOH_BRIDGE_AIR_VANTAGE_INCLUDE_GUARD
 #define SWI_MANGOH_BRIDGE_AIR_VANTAGE_INCLUDE_GUARD

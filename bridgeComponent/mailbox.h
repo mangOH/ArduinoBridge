@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_mailbox.h
+ * @file mailbox.h
  *
  * Arduino bridge mailbox sub-module.
  *
@@ -12,9 +12,9 @@
  * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
  */
 #include "legato.h"
-#include "swi_mangoh_bridge_tcpServer.h"
-#include "swi_mangoh_bridge_tcpClient.h"
-#include "swi_mangoh_bridge_json.h"
+#include "tcpServer.h"
+#include "tcpClient.h"
+#include "json.h"
 
 #ifndef SWI_MANGOH_BRIDGE_MAILBOX_INCLUDE_GUARD
 #define SWI_MANGOH_BRIDGE_MAILBOX_INCLUDE_GUARD

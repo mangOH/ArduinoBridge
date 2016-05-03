@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_fileIO.h
+ * @file fileIO.h
  *
  * Arduino bridge file I/O sub-module.
  *
@@ -10,7 +10,7 @@
  * <HR>
  *
  * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
- */#include "swi_mangoh_bridge_packet.h"
+ */#include "packet.h"
 
 #ifndef SWI_MANGOH_BRIDGE_FILEIO_INCLUDE_GUARD
 #define SWI_MANGOH_BRIDGE_FILEIO_INCLUDE_GUARD

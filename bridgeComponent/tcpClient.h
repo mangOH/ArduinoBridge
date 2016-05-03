@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_tcpClient.h
+ * @file tcpClient.h
  *
  * Arduino bridge TCP client sub-module.
  *

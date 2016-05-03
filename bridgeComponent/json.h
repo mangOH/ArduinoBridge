@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_json.h
+ * @file json.h
  *
  * Arduino bridge JSON data processor module.
  *

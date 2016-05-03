@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge.h
+ * @file bridge.h
  *
  * Arduino bridge module.
  *
@@ -12,13 +12,13 @@
  * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
  */
 #include "legato.h"
-#include "swi_mangoh_bridge_airVantage.h"
-#include "swi_mangoh_bridge_packet.h"
-#include "swi_mangoh_bridge_fileIO.h"
-#include "swi_mangoh_bridge_console.h"
-#include "swi_mangoh_bridge_mailbox.h"
-#include "swi_mangoh_bridge_processes.h"
-#include "swi_mangoh_bridge_sockets.h"
+#include "airVantage.h"
+#include "packet.h"
+#include "fileIO.h"
+#include "console.h"
+#include "mailbox.h"
+#include "processes.h"
+#include "sockets.h"
 
 #ifndef SWI_MANGOH_BRIDGE_INCLUDE_GUARD
 #define SWI_MANGOH_BRIDGE_INCLUDE_GUARD

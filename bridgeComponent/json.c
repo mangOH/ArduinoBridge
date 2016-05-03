@@ -1,6 +1,6 @@
 #include "legato.h"
-#include "swi_mangoh_bridge_utils.h"
-#include "swi_mangoh_bridge_json.h"
+#include "utils.h"
+#include "json.h"
 
 static bool swi_mangoh_bridge_json_isDigit(const uint8_t*);
 static int swi_mangoh_bridge_json_hexToInt(const uint8_t*);

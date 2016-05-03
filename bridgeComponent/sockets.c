@@ -3,8 +3,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include "legato.h"
-#include "swi_mangoh_bridge.h"
-#include "swi_mangoh_bridge_sockets.h"
+#include "bridge.h"
+#include "sockets.h"
 
 static int swi_mangoh_bridge_sockets_listen(void*, const unsigned char*, uint32_t);
 static int swi_mangoh_bridge_sockets_accept(void*, const unsigned char*, uint32_t);

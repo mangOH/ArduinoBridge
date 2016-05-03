@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_utils.h
+ * @file utils.h
  *
  * Arduino bridge system call utilities module.
  *

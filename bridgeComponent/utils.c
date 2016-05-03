@@ -1,5 +1,5 @@
 #include "legato.h"
-#include "swi_mangoh_bridge_utils.h"
+#include "utils.h"
 
 char* strreplace(const char* str, const char* old, const char* new)
 {

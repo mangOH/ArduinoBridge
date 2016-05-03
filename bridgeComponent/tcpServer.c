@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "legato.h"
-#include "swi_mangoh_bridge_tcpServer.h"
+#include "tcpServer.h"
 
 int swi_mangoh_bridge_tcp_server_acceptNewConnections(swi_mangoh_bridge_tcp_server_t* tcpServer, swi_mangoh_bridge_tcp_client_t* tcpClients)
 {

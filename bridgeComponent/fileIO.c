@@ -3,8 +3,8 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 #include "legato.h"
-#include "swi_mangoh_bridge.h"
-#include "swi_mangoh_bridge_fileIO.h"
+#include "bridge.h"
+#include "fileIO.h"
 
 static int swi_mangoh_bridge_fileio_getMode(unsigned char, int*);
 static int swi_mangoh_bridge_fileio_open(void*, const unsigned char*, uint32_t);

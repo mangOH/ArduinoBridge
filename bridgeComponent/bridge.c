@@ -2,7 +2,7 @@
 #include <termios.h>
 #include <arpa/inet.h>
 #include "interfaces.h"
-#include "swi_mangoh_bridge.h"
+#include "bridge.h"
 
 static int swi_mangoh_bridge_read(swi_mangoh_bridge_t*, unsigned char*, unsigned int);
 static int swi_mangoh_bridge_write(const swi_mangoh_bridge_t*, const unsigned char*, unsigned int);

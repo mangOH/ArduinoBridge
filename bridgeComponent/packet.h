@@ -1,5 +1,5 @@
 /*
- * @file swi_mangoh_bridge_packet.h
+ * @file packet.h
  *
  * Arduino bridge packet module.
  *

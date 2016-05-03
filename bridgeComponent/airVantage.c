@@ -1,7 +1,7 @@
 #include <arpa/inet.h>
 #include "legato.h"
-#include "swi_mangoh_bridge.h"
-#include "swi_mangoh_bridge_airVantage.h"
+#include "bridge.h"
+#include "airVantage.h"
 
 static int swi_mangoh_bridge_air_vantage_sessionStart(void*, const unsigned char*, uint32_t);
 static int swi_mangoh_bridge_air_vantage_sessionEnd(void*, const unsigned char*, uint32_t);

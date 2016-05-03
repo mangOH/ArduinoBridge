@@ -12,9 +12,9 @@
  * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
  */
 #include "legato.h"
-#include "swi_mangoh_bridge_packet.h"
-#include "swi_mangoh_bridge_tcpClient.h"
-#include "swi_mangoh_bridge_tcpServer.h"
+#include "packet.h"
+#include "tcpClient.h"
+#include "tcpServer.h"
 
 #ifndef SWI_MANGOH_BRIDGE_CONSOLE_INCLUDE_GUARD
 #define SWI_MANGOH_BRIDGE_CONSOLE_INCLUDE_GUARD
