@@ -1,4 +1,6 @@
-TARGETS := ar7 wp7 ar86 wp85 localhost
+TARGETS := wp85
+
+export MANGOH_ROOT=$(LEGATO_ROOT)/../mangOH
 
 export MANGOH_ROOT ?= $(PWD)/../..
 
@@ -8,8 +10,7 @@ all: wp85
 $(TARGETS):
 	export TARGET=$@ ; \
 	mkapp -v -t $@ \
-		  -i ../DataRouter \
-		  arduinoBridge.adef
+          arduinoBridge.adef
 
 clean:
-	rm -rf _build_* *.ar7 *.wp7 *.ar86 *.wp85 *.wp85.update *.localhost
+	rm -rf _build_* *.wp85 *.wp85.update
