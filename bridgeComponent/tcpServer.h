@@ -1,5 +1,5 @@
 /*
- * @file tcpServer.h
+ * @file mangoh_bridge_tcpServer.h
  *
  * Arduino bridge TCP server module.
  *
@@ -11,26 +11,26 @@
  */
 #include "tcpClient.h"
 
-#ifndef SWI_MANGOH_BRIDGE_TCP_SERVER_INCLUDE_GUARD
-#define SWI_MANGOH_BRIDGE_TCP_SERVER_INCLUDE_GUARD
+#ifndef MANGOH_BRIDGE_TCP_SERVER_INCLUDE_GUARD
+#define MANGOH_BRIDGE_TCP_SERVER_INCLUDE_GUARD
 
-#define SWI_MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID                   -1
-#define SWI_MANGOH_BRIDGE_TCP_SERVER_RETRY_BIND_DELAY_SECS            5
+#define MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID                   -1
+#define MANGOH_BRIDGE_TCP_SERVER_RETRY_BIND_DELAY_SECS            5
 
 //------------------------------------------------------------------------------------------------------------------
 /**
  * TCP server module
  */
 //------------------------------------------------------------------------------------------------------------------
-typedef struct _swi_mangoh_bridge_tcp_server_t
+typedef struct _mangoh_bridge_tcp_server_t
 {
-    fd_set                                     readfds;                ///< Read descriptor set
-    int32_t                                    sockFd;                 ///< Server socket descriptor
-} swi_mangoh_bridge_tcp_server_t;
+    fd_set  readfds; ///< Read descriptor set
+    int32_t sockFd;  ///< Server socket descriptor
+} mangoh_bridge_tcp_server_t;
 
-int swi_mangoh_bridge_tcp_server_acceptNewConnections(swi_mangoh_bridge_tcp_server_t*, swi_mangoh_bridge_tcp_client_t*);
+int mangoh_bridge_tcp_server_acceptNewConnections(mangoh_bridge_tcp_server_t*, mangoh_bridge_tcp_client_t*);
 
-int swi_mangoh_bridge_tcp_server_start(swi_mangoh_bridge_tcp_server_t*, const char*, const char*, uint32_t);
-int swi_mangoh_bridge_tcp_server_stop(swi_mangoh_bridge_tcp_server_t*);
+int mangoh_bridge_tcp_server_start(mangoh_bridge_tcp_server_t*, const char*, const char*, uint32_t);
+int mangoh_bridge_tcp_server_stop(mangoh_bridge_tcp_server_t*);
 
 #endif

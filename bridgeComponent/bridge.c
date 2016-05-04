@@ -4,32 +4,32 @@
 #include "interfaces.h"
 #include "bridge.h"
 
-static int swi_mangoh_bridge_read(swi_mangoh_bridge_t*, unsigned char*, unsigned int);
-static int swi_mangoh_bridge_write(const swi_mangoh_bridge_t*, const unsigned char*, unsigned int);
+static int mangoh_bridge_read(mangoh_bridge_t*, unsigned char*, unsigned int);
+static int mangoh_bridge_write(const mangoh_bridge_t*, const unsigned char*, unsigned int);
 
-static int swi_mangoh_bridge_process_msg_idx(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_process_payload_len(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_process_crc(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_process_cmd(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_close(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_reset(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_process_payload(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_process_msg(swi_mangoh_bridge_t*);
+static int mangoh_bridge_process_msg_idx(mangoh_bridge_t*);
+static int mangoh_bridge_process_payload_len(mangoh_bridge_t*);
+static int mangoh_bridge_process_crc(mangoh_bridge_t*);
+static int mangoh_bridge_process_cmd(mangoh_bridge_t*);
+static int mangoh_bridge_close(mangoh_bridge_t*);
+static int mangoh_bridge_reset(mangoh_bridge_t*);
+static int mangoh_bridge_process_payload(mangoh_bridge_t*);
+static int mangoh_bridge_process_msg(mangoh_bridge_t*);
 
-static int swi_mangoh_bridge_excute_runners(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_excute_resets(swi_mangoh_bridge_t*);
-static void swi_mangoh_bridge_eventHandler(int, short);
+static int mangoh_bridge_excute_runners(mangoh_bridge_t*);
+static int mangoh_bridge_excute_resets(mangoh_bridge_t*);
+static void mangoh_bridge_eventHandler(int, short);
 
-static void swi_mangoh_bridge_SigTermEventHandler(int);
-static int swi_mangoh_bridge_start(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_stop(swi_mangoh_bridge_t*);
-static int swi_mangoh_bridge_init(swi_mangoh_bridge_t*);
+static void mangoh_bridge_SigTermEventHandler(int);
+static int mangoh_bridge_start(mangoh_bridge_t*);
+static int mangoh_bridge_stop(mangoh_bridge_t*);
+static int mangoh_bridge_init(mangoh_bridge_t*);
 
-static swi_mangoh_bridge_t bridge;
+static mangoh_bridge_t bridge;
 
 static le_log_TraceRef_t BridgeTraceRef;
 
-static int swi_mangoh_bridge_read(swi_mangoh_bridge_t* bridge, unsigned char* data, unsigned int len)
+static int mangoh_bridge_read(mangoh_bridge_t* bridge, unsigned char* data, unsigned int len)
 {
     int32_t res = LE_OK;
 
@@ -39,7 +39,7 @@ static int swi_mangoh_bridge_read(swi_mangoh_bridge_t* bridge, unsigned char* da
     FD_ZERO(&bridge->readfds);
     FD_SET(bridge->serialFd, &bridge->readfds);
 
-    struct timeval tv  = { .tv_sec = 0, .tv_usec = SWI_MANGOH_BRIDGE_READ_WAIT_MICROSEC };
+    struct timeval tv  = { .tv_sec = 0, .tv_usec = MANGOH_BRIDGE_READ_WAIT_MICROSEC };
     res = select(bridge->serialFd + 1, &bridge->readfds, NULL, NULL, &tv);
     if (res < 0)
     {
@@ -66,17 +66,17 @@ static int swi_mangoh_bridge_read(swi_mangoh_bridge_t* bridge, unsigned char* da
                 LE_ERROR("ERROR read() fd(%d) failed(%d/%d)", bridge->serialFd, bytesRead, errno);
                 sleep(1);
 
-                res = swi_mangoh_bridge_stop(bridge);
+                res = mangoh_bridge_stop(bridge);
                 if (res)
                 {
-                    LE_ERROR("ERROR swi_mangoh_bridge_stop() failed(%d/%d)", res, errno);
+                    LE_ERROR("ERROR mangoh_bridge_stop() failed(%d/%d)", res, errno);
                     goto cleanup;
                 }
 
-                res = swi_mangoh_bridge_start(bridge);
+                res = mangoh_bridge_start(bridge);
                 if (res)
                 {
-                    LE_ERROR("ERROR swi_mangoh_bridge_start() failed(%d/%d)", res, errno);
+                    LE_ERROR("ERROR mangoh_bridge_start() failed(%d/%d)", res, errno);
                     goto cleanup;
                 }
 
@@ -88,7 +88,7 @@ static int swi_mangoh_bridge_read(swi_mangoh_bridge_t* bridge, unsigned char* da
         LE_TRACE(BridgeTraceRef, "received(%u)", len);
         if(LE_IS_TRACE_ENABLED(BridgeTraceRef))
         {
-            swi_mangoh_bridge_packet_dumpBuffer(data, len);
+            mangoh_bridge_packet_dumpBuffer(data, len);
         }
         res = len;
     }
@@ -97,7 +97,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_write(const swi_mangoh_bridge_t* bridge, const unsigned char* data, unsigned int len)
+static int mangoh_bridge_write(const mangoh_bridge_t* bridge, const unsigned char* data, unsigned int len)
 {
     int32_t res = LE_OK;
 
@@ -106,9 +106,9 @@ static int swi_mangoh_bridge_write(const swi_mangoh_bridge_t* bridge, const unsi
 
     if(LE_IS_TRACE_ENABLED(BridgeTraceRef))
     {
-        swi_mangoh_bridge_packet_dumpBuffer(data, len);
+        mangoh_bridge_packet_dumpBuffer(data, len);
     }
-    
+
     const unsigned char* ptr = data;
     unsigned int msgLen = len;
 
@@ -130,45 +130,45 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_process_msg_idx(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_process_msg_idx(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    res = swi_mangoh_bridge_read(bridge, &bridge->packet.msg.idx, sizeof(bridge->packet.msg.idx));
+    res = mangoh_bridge_read(bridge, &bridge->packet.msg.idx, sizeof(bridge->packet.msg.idx));
     if (res < 0)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_read() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_read() failed(%d)", res);
         goto cleanup;
     }
 
     LE_TRACE(BridgeTraceRef, "message index(%u)", bridge->packet.msg.idx);
-    bridge->packet.crc = swi_mangoh_bridge_packet_crcUpdate(bridge->packet.crc, &bridge->packet.msg.idx, sizeof(bridge->packet.msg.idx));
+    bridge->packet.crc = mangoh_bridge_packet_crcUpdate(bridge->packet.crc, &bridge->packet.msg.idx, sizeof(bridge->packet.msg.idx));
     res = LE_OK;
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_process_payload_len(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_process_payload_len(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    res = swi_mangoh_bridge_read(bridge, (unsigned char*)&bridge->packet.msg.len, sizeof(bridge->packet.msg.len));
+    res = mangoh_bridge_read(bridge, (unsigned char*)&bridge->packet.msg.len, sizeof(bridge->packet.msg.len));
     if (res < 0)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_read() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_read() failed(%d)", res);
         goto cleanup;
     }
 
-    bridge->packet.crc = swi_mangoh_bridge_packet_crcUpdate(bridge->packet.crc, (unsigned char*)&bridge->packet.msg.len, sizeof(bridge->packet.msg.len));
+    bridge->packet.crc = mangoh_bridge_packet_crcUpdate(bridge->packet.crc, (unsigned char*)&bridge->packet.msg.len, sizeof(bridge->packet.msg.len));
     bridge->packet.msg.len = ntohs(bridge->packet.msg.len);
     if (bridge->packet.msg.len > sizeof(bridge->packet.msg.data))
     {
-        LE_ERROR("ERROR invalid payload length(0x%04x > %u)", bridge->packet.msg.len, SWI_MANGOH_BRIDGE_PACKET_DATA_SIZE);
+        LE_ERROR("ERROR invalid payload length(0x%04x > %u)", bridge->packet.msg.len, MANGOH_BRIDGE_PACKET_DATA_SIZE);
         res = LE_OUT_OF_RANGE;
         goto cleanup;
     }
@@ -179,31 +179,31 @@ static int swi_mangoh_bridge_process_payload_len(swi_mangoh_bridge_t* bridge)
         LE_TRACE(BridgeTraceRef, "---> payload");
 
         memset(bridge->packet.msg.data, 0, sizeof(bridge->packet.msg.data));
-        res = swi_mangoh_bridge_read(bridge, bridge->packet.msg.data, bridge->packet.msg.len);
+        res = mangoh_bridge_read(bridge, bridge->packet.msg.data, bridge->packet.msg.len);
         if (res < 0)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_read() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_read() failed(%d)", res);
             goto cleanup;
         }
     }
 
-    bridge->packet.crc = swi_mangoh_bridge_packet_crcUpdate(bridge->packet.crc, bridge->packet.msg.data, bridge->packet.msg.len);
+    bridge->packet.crc = mangoh_bridge_packet_crcUpdate(bridge->packet.crc, bridge->packet.msg.data, bridge->packet.msg.len);
     res = LE_OK;
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_process_crc(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_process_crc(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    res = swi_mangoh_bridge_read(bridge, (unsigned char*)&bridge->packet.msg.crc, sizeof(bridge->packet.msg.crc));
+    res = mangoh_bridge_read(bridge, (unsigned char*)&bridge->packet.msg.crc, sizeof(bridge->packet.msg.crc));
     if (res < 0)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_read() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_read() failed(%d)", res);
         goto cleanup;
     }
 
@@ -223,23 +223,23 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_process_cmd(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_process_cmd(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    swi_mangoh_bridge_packet_data_t* req = (swi_mangoh_bridge_packet_data_t*)bridge->packet.msg.data;
+    mangoh_bridge_packet_data_t* req = (mangoh_bridge_packet_data_t*)bridge->packet.msg.data;
     LE_TRACE(BridgeTraceRef, "command(0x%02x)", req->cmd);
 
     if (!bridge->cmdHdlrs[req->cmd].fcn || !bridge->cmdHdlrs[req->cmd].module)
     {
         LE_ERROR("ERROR unsupported command(0x%02x)", req->cmd);
 
-        res = swi_mangoh_bridge_sendNack(bridge);
+        res = mangoh_bridge_sendNack(bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -258,7 +258,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_close(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_close(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
@@ -272,10 +272,10 @@ static int swi_mangoh_bridge_close(swi_mangoh_bridge_t* bridge)
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_sendAck(bridge);
+    res = mangoh_bridge_sendAck(bridge);
     if (res != LE_OK)
     {
-          LE_ERROR("ERROR swi_mangoh_bridge_sendAck() failed(%d)", res);
+          LE_ERROR("ERROR mangoh_bridge_sendAck() failed(%d)", res);
         goto cleanup;
     }
 
@@ -285,23 +285,23 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_reset(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_reset(mangoh_bridge_t* bridge)
 {
-    unsigned int rxVersion[SWI_MANGOH_BRIDGE_PACKET_VERSION_SIZE] = {0};
+    unsigned int rxVersion[MANGOH_BRIDGE_PACKET_VERSION_SIZE] = {0};
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
     LE_INFO("---> RESET");
-    if (bridge->packet.msg.len != sizeof(bridge->packet.reset) + SWI_MANGOH_BRIDGE_PACKET_VERSION_SIZE)
+    if (bridge->packet.msg.len != sizeof(bridge->packet.reset) + MANGOH_BRIDGE_PACKET_VERSION_SIZE)
     {
         LE_ERROR("ERROR invalid reset command length(%u != %u)",
-                bridge->packet.msg.len, sizeof(bridge->packet.reset) + SWI_MANGOH_BRIDGE_PACKET_VERSION_SIZE);
+                bridge->packet.msg.len, sizeof(bridge->packet.reset) + MANGOH_BRIDGE_PACKET_VERSION_SIZE);
 
-        res = swi_mangoh_bridge_sendNack(bridge);
+        res = mangoh_bridge_sendNack(bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -320,10 +320,10 @@ static int swi_mangoh_bridge_reset(swi_mangoh_bridge_t* bridge)
                 rxVersion[0], rxVersion[1], rxVersion[2],
                 bridge->packet.version[0], bridge->packet.version[1], bridge->packet.version[2]);
 
-        res = swi_mangoh_bridge_sendNack(bridge);
+        res = mangoh_bridge_sendNack(bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -331,10 +331,10 @@ static int swi_mangoh_bridge_reset(swi_mangoh_bridge_t* bridge)
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_excute_resets(bridge);
+    res = mangoh_bridge_excute_resets(bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_excute_resets() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_excute_resets() failed(%d)", res);
         goto cleanup;
     }
 
@@ -342,10 +342,10 @@ static int swi_mangoh_bridge_reset(swi_mangoh_bridge_t* bridge)
     result[0] = res;
     memcpy(&result[1], bridge->packet.version, sizeof(bridge->packet.version));
     LE_TRACE(BridgeTraceRef, "result(%d) version(%u.%u.%u)", result[0], result[1] - '0', result[2] - '0', result[3] - '0');
-    res = swi_mangoh_bridge_sendResult(bridge, sizeof(uint8_t) + sizeof(bridge->packet.version));
+    res = mangoh_bridge_sendResult(bridge, sizeof(uint8_t) + sizeof(bridge->packet.version));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -355,7 +355,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_process_payload(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_process_payload(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
@@ -365,17 +365,17 @@ static int swi_mangoh_bridge_process_payload(swi_mangoh_bridge_t* bridge)
     {
         if (!memcmp(bridge->packet.msg.data, bridge->packet.reset, sizeof(bridge->packet.reset)))
         {
-            res = swi_mangoh_bridge_reset(bridge);
+            res = mangoh_bridge_reset(bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_reset() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_reset() failed(%d)", res);
                 goto cleanup;
             }
         }
         else
         {
             LE_ERROR("ERROR unexpected command");
-            swi_mangoh_bridge_packet_dumpBuffer(bridge->packet.msg.data, bridge->packet.msg.len);
+            mangoh_bridge_packet_dumpBuffer(bridge->packet.msg.data, bridge->packet.msg.len);
             res = LE_BAD_PARAMETER;
             goto cleanup;
         }
@@ -384,28 +384,28 @@ static int swi_mangoh_bridge_process_payload(swi_mangoh_bridge_t* bridge)
     {
         if (!memcmp(bridge->packet.msg.data, bridge->packet.close, sizeof(bridge->packet.close)))
         {
-            res = swi_mangoh_bridge_close(bridge);
+            res = mangoh_bridge_close(bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_close() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_close() failed(%d)", res);
                 goto cleanup;
             }
         }
         else if (!memcmp(bridge->packet.msg.data, bridge->packet.reset, sizeof(bridge->packet.reset)))
         {
-            res = swi_mangoh_bridge_reset(bridge);
+            res = mangoh_bridge_reset(bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_reset() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_reset() failed(%d)", res);
                 goto cleanup;
             }
         }
         else
         {
-            res = swi_mangoh_bridge_process_cmd(bridge);
+            res = mangoh_bridge_process_cmd(bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_process_cmd() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_process_cmd() failed(%d)", res);
                 goto cleanup;
             }
         }
@@ -415,40 +415,40 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_process_msg(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_process_msg(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    bridge->packet.crc = SWI_MANGOH_BRIDGE_PACKET_CRC_RESET;
-    bridge->packet.crc = swi_mangoh_bridge_packet_crcUpdate(bridge->packet.crc, &bridge->packet.msg.start, sizeof(bridge->packet.msg.start));
+    bridge->packet.crc = MANGOH_BRIDGE_PACKET_CRC_RESET;
+    bridge->packet.crc = mangoh_bridge_packet_crcUpdate(bridge->packet.crc, &bridge->packet.msg.start, sizeof(bridge->packet.msg.start));
 
-    res = swi_mangoh_bridge_process_msg_idx(bridge);
+    res = mangoh_bridge_process_msg_idx(bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_process_msg_idx() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_process_msg_idx() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_process_payload_len(bridge);
+    res = mangoh_bridge_process_payload_len(bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_process_payload_len() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_process_payload_len() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_process_crc(bridge);
+    res = mangoh_bridge_process_crc(bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_process_crc() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_process_crc() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_process_payload(bridge);
+    res = mangoh_bridge_process_payload(bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_process_payload() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_process_payload() failed(%d)", res);
         goto cleanup;
     }
 
@@ -456,7 +456,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_excute_runners(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_excute_runners(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
@@ -465,7 +465,7 @@ static int swi_mangoh_bridge_excute_runners(swi_mangoh_bridge_t* bridge)
     const le_sls_Link_t* link = le_sls_Peek(&bridge->runnerList);
     while (link)
     {
-        swi_mangoh_bridge_runner_item_t* currEntry = CONTAINER_OF(link, swi_mangoh_bridge_runner_item_t, link);
+        mangoh_bridge_runner_item_t* currEntry = CONTAINER_OF(link, mangoh_bridge_runner_item_t, link);
 
         res = currEntry->info.fcn(currEntry->info.module);
         if (res)
@@ -481,7 +481,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_excute_resets(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_excute_resets(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
@@ -490,7 +490,7 @@ static int swi_mangoh_bridge_excute_resets(swi_mangoh_bridge_t* bridge)
     const le_sls_Link_t* link = le_sls_Peek(&bridge->resetList);
     while (link)
     {
-        swi_mangoh_bridge_reset_item_t* currEntry = CONTAINER_OF(link, swi_mangoh_bridge_reset_item_t, link);
+        mangoh_bridge_reset_item_t* currEntry = CONTAINER_OF(link, mangoh_bridge_reset_item_t, link);
 
         res = currEntry->info.fcn(currEntry->info.module);
         if (res)
@@ -506,40 +506,40 @@ cleanup:
     return res;
 }
 
-static void swi_mangoh_bridge_eventHandler(int fd, short events)
+static void mangoh_bridge_eventHandler(int fd, short events)
 {
-    swi_mangoh_bridge_t* bridge = le_fdMonitor_GetContextPtr();
+    mangoh_bridge_t* bridge = le_fdMonitor_GetContextPtr();
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    res = swi_mangoh_bridge_excute_runners(bridge);
+    res = mangoh_bridge_excute_runners(bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_excute_runners() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_excute_runners() failed(%d)", res);
     }
 
-    LE_TRACE(BridgeTraceRef, "read '%s'", SWI_MANGOH_BRIDGE_SERIAL_PORT_FN);
-    res = swi_mangoh_bridge_read(bridge, &bridge->packet.msg.start, sizeof(bridge->packet.msg.start));
+    LE_TRACE(BridgeTraceRef, "read '%s'", MANGOH_BRIDGE_SERIAL_PORT_FN);
+    res = mangoh_bridge_read(bridge, &bridge->packet.msg.start, sizeof(bridge->packet.msg.start));
     if (res < 0)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_read() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_read() failed(%d)", res);
     }
     else if (res > 0)
     {
         LE_TRACE(BridgeTraceRef, "read 0x%02x", bridge->packet.msg.start);
-        if (bridge->packet.msg.start == SWI_MANGOH_BRIDGE_PACKET_START)
+        if (bridge->packet.msg.start == MANGOH_BRIDGE_PACKET_START)
         {
-            res = swi_mangoh_bridge_process_msg(bridge);
+            res = mangoh_bridge_process_msg(bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_process_msg() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_process_msg() failed(%d)", res);
             }
         }
     }
 }
 
-static int swi_mangoh_bridge_start(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_start(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
@@ -547,11 +547,11 @@ static int swi_mangoh_bridge_start(swi_mangoh_bridge_t* bridge)
 
     while (bridge->serialFd < 0)
     {
-        LE_INFO("open '%s'", SWI_MANGOH_BRIDGE_SERIAL_PORT_FN);
-        bridge->serialFd = open(SWI_MANGOH_BRIDGE_SERIAL_PORT_FN, O_RDWR | O_NOCTTY | O_EXCL);
+        LE_INFO("open '%s'", MANGOH_BRIDGE_SERIAL_PORT_FN);
+        bridge->serialFd = open(MANGOH_BRIDGE_SERIAL_PORT_FN, O_RDWR | O_NOCTTY | O_EXCL);
         if (bridge->serialFd < 0)
         {
-            LE_ERROR("ERROR open() '%s' failed(%d)", SWI_MANGOH_BRIDGE_SERIAL_PORT_FN, errno);
+            LE_ERROR("ERROR open() '%s' failed(%d)", MANGOH_BRIDGE_SERIAL_PORT_FN, errno);
             sleep(1);
             continue;
         }
@@ -610,7 +610,7 @@ static int swi_mangoh_bridge_start(swi_mangoh_bridge_t* bridge)
             goto cleanup;
         }
 
-        bridge->fdMonitor = le_fdMonitor_Create(SWI_MANGOH_BRIDGE_FD_MONITOR_NAME, bridge->serialFd, swi_mangoh_bridge_eventHandler, POLLIN);
+        bridge->fdMonitor = le_fdMonitor_Create(MANGOH_BRIDGE_FD_MONITOR_NAME, bridge->serialFd, mangoh_bridge_eventHandler, POLLIN);
         if (!bridge->fdMonitor)
         {
             LE_ERROR("ERROR le_fdMonitor_Create() failed");
@@ -626,14 +626,14 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_stop(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_stop(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
     LE_INFO("bridge stop");
-    if (bridge->serialFd != SWI_MANGOH_BRIDGE_SERIAL_FD_INVALID)
+    if (bridge->serialFd != MANGOH_BRIDGE_SERIAL_FD_INVALID)
     {
         res = close(bridge->serialFd);
         if (res != LE_OK)
@@ -643,7 +643,7 @@ static int swi_mangoh_bridge_stop(swi_mangoh_bridge_t* bridge)
             goto cleanup;
         }
 
-        bridge->serialFd = SWI_MANGOH_BRIDGE_SERIAL_FD_INVALID;
+        bridge->serialFd = MANGOH_BRIDGE_SERIAL_FD_INVALID;
         bridge->closed = false;
 
         le_fdMonitor_Delete(bridge->fdMonitor);
@@ -657,12 +657,12 @@ cleanup:
     return res;
 }
 
-static void swi_mangoh_bridge_SigTermEventHandler(int sigNum)
+static void mangoh_bridge_SigTermEventHandler(int sigNum)
 {
-    int32_t res = swi_mangoh_bridge_destroy(&bridge);
+    int32_t res = mangoh_bridge_destroy(&bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_destroy() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_destroy() failed(%d)", res);
         goto cleanup;
     }
 
@@ -670,66 +670,66 @@ cleanup:
     return;
 }
 
-static int swi_mangoh_bridge_init(swi_mangoh_bridge_t* bridge)
+static int mangoh_bridge_init(mangoh_bridge_t* bridge)
 {
-    char version[SWI_MANGOH_BRIDGE_PACKET_VERSION_SIZE] = SWI_MANGOH_BRIDGE_PACKET_VERSION;
-    char reset[SWI_MANGOH_BRIDGE_PACKET_RESET_SIZE] = SWI_MANGOH_BRIDGE_PACKET_RESET;
-    char close[SWI_MANGOH_BRIDGE_PACKET_CLOSE_SIZE] = SWI_MANGOH_BRIDGE_PACKET_CLOSE;
+    char version[MANGOH_BRIDGE_PACKET_VERSION_SIZE] = MANGOH_BRIDGE_PACKET_VERSION;
+    char reset[MANGOH_BRIDGE_PACKET_RESET_SIZE] = MANGOH_BRIDGE_PACKET_RESET;
+    char close[MANGOH_BRIDGE_PACKET_CLOSE_SIZE] = MANGOH_BRIDGE_PACKET_CLOSE;
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
-    memset(bridge, 0, sizeof(swi_mangoh_bridge_t));
+    memset(bridge, 0, sizeof(mangoh_bridge_t));
 
     BridgeTraceRef = le_log_GetTraceRef("Bridge");
 
     memcpy(bridge->packet.version, version, sizeof(version));
     memcpy(bridge->packet.reset, reset, sizeof(reset));
     memcpy(bridge->packet.close, close, sizeof(close));
-    bridge->serialFd = SWI_MANGOH_BRIDGE_SERIAL_FD_INVALID;
-    bridge->packet.crc = SWI_MANGOH_BRIDGE_PACKET_CRC_RESET;
-    bridge->packet.msg.crc = SWI_MANGOH_BRIDGE_PACKET_CRC_RESET;
+    bridge->serialFd = MANGOH_BRIDGE_SERIAL_FD_INVALID;
+    bridge->packet.crc = MANGOH_BRIDGE_PACKET_CRC_RESET;
+    bridge->packet.msg.crc = MANGOH_BRIDGE_PACKET_CRC_RESET;
     bridge->runnerList = LE_SLS_LIST_INIT;
     bridge->resetList = LE_SLS_LIST_INIT;
 
-    res = swi_mangoh_bridge_fileio_init(&bridge->modules.fileio, bridge);
+    res = mangoh_bridge_fileio_init(&bridge->modules.fileio, bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_fileio_init() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_fileio_init() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_console_init(&bridge->modules.console, bridge);
+    res = mangoh_bridge_console_init(&bridge->modules.console, bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_console_init() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_console_init() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_mailbox_init(&bridge->modules.mailbox, bridge);
+    res = mangoh_bridge_mailbox_init(&bridge->modules.mailbox, bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_mailbox_init() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_mailbox_init() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_processes_init(&bridge->modules.processes, bridge);
+    res = mangoh_bridge_processes_init(&bridge->modules.processes, bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_processes_init() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_processes_init() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_sockets_init(&bridge->modules.sockets, bridge);
+    res = mangoh_bridge_sockets_init(&bridge->modules.sockets, bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sockets_init() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sockets_init() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_air_vantage_init(&bridge->modules.airVantage, bridge);
+    res = mangoh_bridge_air_vantage_init(&bridge->modules.airVantage, bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_air_vantage_init() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_air_vantage_init() failed(%d)", res);
         goto cleanup;
     }
 
@@ -737,13 +737,12 @@ cleanup:
     return res;
 }
 
-
-le_log_TraceRef_t swi_mangoh_bridge_getTraceRef(void)
+le_log_TraceRef_t mangoh_bridge_getTraceRef(void)
 {
     return BridgeTraceRef;
 }
 
-int swi_mangoh_bridge_sendAck(swi_mangoh_bridge_t* bridge)
+int mangoh_bridge_sendAck(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
@@ -751,12 +750,12 @@ int swi_mangoh_bridge_sendAck(swi_mangoh_bridge_t* bridge)
 
     LE_INFO("<--- ACK");
     unsigned char* result = bridge->packet.msg.data;
-    result[0] = SWI_MANGOH_BRIDGE_PACKET_ACK;
+    result[0] = MANGOH_BRIDGE_PACKET_ACK;
 
-    res = swi_mangoh_bridge_sendResult(bridge, sizeof(uint8_t));
+    res = mangoh_bridge_sendResult(bridge, sizeof(uint8_t));
     if (res)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -764,7 +763,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_sendNack(swi_mangoh_bridge_t* bridge)
+int mangoh_bridge_sendNack(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
@@ -772,12 +771,12 @@ int swi_mangoh_bridge_sendNack(swi_mangoh_bridge_t* bridge)
 
     LE_INFO("<--- NACK");
     unsigned char* result = bridge->packet.msg.data;
-    result[0] = SWI_MANGOH_BRIDGE_PACKET_NACK;
+    result[0] = MANGOH_BRIDGE_PACKET_NACK;
 
-    res = swi_mangoh_bridge_sendResult(bridge, sizeof(uint8_t));
+    res = mangoh_bridge_sendResult(bridge, sizeof(uint8_t));
     if (res)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -785,37 +784,37 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_sendResult(swi_mangoh_bridge_t* bridge, uint32_t len)
+int mangoh_bridge_sendResult(mangoh_bridge_t* bridge, uint32_t len)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    swi_mangoh_bridge_packet_initResponse(&bridge->packet, len);
+    mangoh_bridge_packet_initResponse(&bridge->packet, len);
     LE_TRACE(BridgeTraceRef, "<--- RSP length(%u)", len);
 
-    res = swi_mangoh_bridge_write(bridge, (const uint8_t*)&bridge->packet.msg,
+    res = mangoh_bridge_write(bridge, (const uint8_t*)&bridge->packet.msg,
             sizeof(bridge->packet.msg.start) + sizeof(bridge->packet.msg.idx) + sizeof(bridge->packet.msg.len));
     if (res)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_write() failed(%d)", res);
         goto cleanup;
     }
 
     if (len)
     {
-        res = swi_mangoh_bridge_write(bridge, bridge->packet.msg.data, len);
+        res = mangoh_bridge_write(bridge, bridge->packet.msg.data, len);
         if (res)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_write() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_write() failed(%d)", res);
             goto cleanup;
         }
     }
 
-    res = swi_mangoh_bridge_write(bridge, (const unsigned char*)&bridge->packet.msg.crc, sizeof(bridge->packet.msg.crc));
+    res = mangoh_bridge_write(bridge, (const unsigned char*)&bridge->packet.msg.crc, sizeof(bridge->packet.msg.crc));
     if (res)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_write() failed(%d)", res);
         goto cleanup;
     }
 
@@ -823,7 +822,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_registerCommandProcessor(swi_mangoh_bridge_t* bridge, uint8_t cmd, void* module, swi_mangoh_bridge_cmd_proc_func_t cmdProc)
+int mangoh_bridge_registerCommandProcessor(mangoh_bridge_t* bridge, uint8_t cmd, void* module, mangoh_bridge_cmd_proc_func_t cmdProc)
 {
     int32_t res = LE_OK;
 
@@ -843,13 +842,13 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_registerRunner(swi_mangoh_bridge_t* bridge, void* module, swi_mangoh_bridge_runner_func_t runner)
+int mangoh_bridge_registerRunner(mangoh_bridge_t* bridge, void* module, mangoh_bridge_runner_func_t runner)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    swi_mangoh_bridge_runner_item_t* nextEntry = calloc(1, sizeof(swi_mangoh_bridge_runner_item_t));
+    mangoh_bridge_runner_item_t* nextEntry = calloc(1, sizeof(mangoh_bridge_runner_item_t));
     if (!nextEntry)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -867,13 +866,13 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_registerReset(swi_mangoh_bridge_t* bridge, void* module, swi_mangoh_bridge_reset_func_t resetFcn)
+int mangoh_bridge_registerReset(mangoh_bridge_t* bridge, void* module, mangoh_bridge_reset_func_t resetFcn)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    swi_mangoh_bridge_reset_item_t* nextEntry = calloc(1, sizeof(swi_mangoh_bridge_reset_item_t));
+    mangoh_bridge_reset_item_t* nextEntry = calloc(1, sizeof(mangoh_bridge_reset_item_t));
     if (!nextEntry)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -891,51 +890,51 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_destroy(swi_mangoh_bridge_t* bridge)
+int mangoh_bridge_destroy(mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(bridge);
 
-    res = swi_mangoh_bridge_stop(bridge);
+    res = mangoh_bridge_stop(bridge);
     if (res)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_stop() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_stop() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_fileio_destroy(&bridge->modules.fileio);
+    res = mangoh_bridge_fileio_destroy(&bridge->modules.fileio);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_fileio_destroy() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_fileio_destroy() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_console_destroy(&bridge->modules.console);
+    res = mangoh_bridge_console_destroy(&bridge->modules.console);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_console_destroy() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_console_destroy() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_mailbox_destroy(&bridge->modules.mailbox);
+    res = mangoh_bridge_mailbox_destroy(&bridge->modules.mailbox);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_mailbox_destroy() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_mailbox_destroy() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_processes_destroy(&bridge->modules.processes);
+    res = mangoh_bridge_processes_destroy(&bridge->modules.processes);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_processes_destroy() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_processes_destroy() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_air_vantage_destroy(&bridge->modules.airVantage);
+    res = mangoh_bridge_air_vantage_destroy(&bridge->modules.airVantage);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_air_vantage_destroy() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_air_vantage_destroy() failed(%d)", res);
         goto cleanup;
     }
 
@@ -943,7 +942,7 @@ cleanup:
     return res;
 }
 
-__inline swi_mangoh_bridge_air_vantage_t* swi_mangoh_bridge_getAirVantageModule(void)
+__inline mangoh_bridge_air_vantage_t* mangoh_bridge_getAirVantageModule(void)
 {
   return &bridge.modules.airVantage;
 }
@@ -955,20 +954,20 @@ COMPONENT_INIT
     LE_INFO("MangOH Arduino Bridge Service Starting");
 
     le_sig_Block(SIGTERM);
-    le_sig_SetEventHandler(SIGTERM, swi_mangoh_bridge_SigTermEventHandler);
+    le_sig_SetEventHandler(SIGTERM, mangoh_bridge_SigTermEventHandler);
 
-    res = swi_mangoh_bridge_init(&bridge);
+    res = mangoh_bridge_init(&bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_init() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_init() failed(%d)", res);
         goto cleanup;
     }
 
     LE_INFO("start bridge...");
-    res = swi_mangoh_bridge_start(&bridge);
+    res = mangoh_bridge_start(&bridge);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_start() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_start() failed(%d)", res);
         goto cleanup;
     }
 

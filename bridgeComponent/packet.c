@@ -2,7 +2,7 @@
 #include "packet.h"
 #include "bridge.h"
 
-unsigned short swi_mangoh_bridge_packet_crcUpdate(unsigned short crc, const unsigned char* data, unsigned int len)
+unsigned short mangoh_bridge_packet_crcUpdate(unsigned short crc, const unsigned char* data, unsigned int len)
 {
     unsigned char* ptr = (unsigned char*)data;
     unsigned int idx = 0;
@@ -22,28 +22,28 @@ unsigned short swi_mangoh_bridge_packet_crcUpdate(unsigned short crc, const unsi
     return crc;
 }
 
-void swi_mangoh_bridge_packet_initResponse(swi_mangoh_bridge_packet_t* packet, uint32_t len)
+void mangoh_bridge_packet_initResponse(mangoh_bridge_packet_t* packet, uint32_t len)
 {
     LE_ASSERT(packet);
 
-    le_log_TraceRef_t traceRef = swi_mangoh_bridge_getTraceRef();
+    le_log_TraceRef_t traceRef = mangoh_bridge_getTraceRef();
 
-    packet->msg.start = SWI_MANGOH_BRIDGE_PACKET_START;
-    packet->msg.crc = SWI_MANGOH_BRIDGE_PACKET_CRC_RESET;
+    packet->msg.start = MANGOH_BRIDGE_PACKET_START;
+    packet->msg.crc = MANGOH_BRIDGE_PACKET_CRC_RESET;
     packet->msg.len = htons(len);
 
-    packet->msg.crc = swi_mangoh_bridge_packet_crcUpdate(packet->msg.crc, &packet->msg.start, sizeof(packet->msg.start));
+    packet->msg.crc = mangoh_bridge_packet_crcUpdate(packet->msg.crc, &packet->msg.start, sizeof(packet->msg.start));
     LE_TRACE(traceRef, "message index(%u)", packet->msg.idx);
-    packet->msg.crc = swi_mangoh_bridge_packet_crcUpdate(packet->msg.crc, &packet->msg.idx, sizeof(packet->msg.idx));
+    packet->msg.crc = mangoh_bridge_packet_crcUpdate(packet->msg.crc, &packet->msg.idx, sizeof(packet->msg.idx));
 
     LE_TRACE(traceRef, "payload length(%u)", len);
-    packet->msg.crc = swi_mangoh_bridge_packet_crcUpdate(packet->msg.crc, (unsigned char*)&packet->msg.len, sizeof(packet->msg.len));
+    packet->msg.crc = mangoh_bridge_packet_crcUpdate(packet->msg.crc, (unsigned char*)&packet->msg.len, sizeof(packet->msg.len));
 
-    packet->msg.crc = len ? swi_mangoh_bridge_packet_crcUpdate(packet->msg.crc, packet->msg.data, len):packet->msg.crc;
+    packet->msg.crc = len ? mangoh_bridge_packet_crcUpdate(packet->msg.crc, packet->msg.data, len):packet->msg.crc;
     packet->msg.crc = htons(packet->msg.crc);
 }
 
-void swi_mangoh_bridge_packet_dumpBuffer(const unsigned char* buff, unsigned int len)
+void mangoh_bridge_packet_dumpBuffer(const unsigned char* buff, unsigned int len)
 {
     unsigned char* ptr = (unsigned char*)buff;
     unsigned int idx = 0;

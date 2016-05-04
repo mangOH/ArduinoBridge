@@ -118,14 +118,14 @@ pid_t popen2(char** command, int* infp, int* outfp)
     else if (pid == 0)
     {
         // Code only executed by child process
-        res = dup2(p_stdin[SWI_MANGOH_BRIDGE_UTILS_READ_FD], STDIN_FILENO);
+        res = dup2(p_stdin[MANGOH_BRIDGE_UTILS_READ_FD], STDIN_FILENO);
         if (res < 0)
         {
             LE_ERROR("ERROR dup2() failed(%d/%d)", res, errno);
             _exit(EXIT_FAILURE);
         }
 
-        res = dup2(p_stdout[SWI_MANGOH_BRIDGE_UTILS_WRITE_FD], STDOUT_FILENO);
+        res = dup2(p_stdout[MANGOH_BRIDGE_UTILS_WRITE_FD], STDOUT_FILENO);
         if (res < 0)
         {
             LE_ERROR("ERROR dup2() failed(%d/%d)", res, errno);
@@ -133,28 +133,28 @@ pid_t popen2(char** command, int* infp, int* outfp)
         }
 
         //close unused descriptors on child process.
-        res = close(p_stdin[SWI_MANGOH_BRIDGE_UTILS_READ_FD]);
+        res = close(p_stdin[MANGOH_BRIDGE_UTILS_READ_FD]);
         if (res < 0)
         {
             LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
             _exit(EXIT_FAILURE);
         }
 
-        res = close(p_stdin[SWI_MANGOH_BRIDGE_UTILS_WRITE_FD]);
+        res = close(p_stdin[MANGOH_BRIDGE_UTILS_WRITE_FD]);
         if (res < 0)
         {
             LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
             _exit(EXIT_FAILURE);
         }
 
-        res = close(p_stdout[SWI_MANGOH_BRIDGE_UTILS_READ_FD]);
+        res = close(p_stdout[MANGOH_BRIDGE_UTILS_READ_FD]);
         if (res < 0)
         {
             LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
             _exit(EXIT_FAILURE);
         }
 
-        res = close(p_stdout[SWI_MANGOH_BRIDGE_UTILS_WRITE_FD]);
+        res = close(p_stdout[MANGOH_BRIDGE_UTILS_WRITE_FD]);
         if (res < 0)
         {
             LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
@@ -172,7 +172,7 @@ pid_t popen2(char** command, int* infp, int* outfp)
     }
 
     // close unused descriptors on parent process.
-    res = close(p_stdin[SWI_MANGOH_BRIDGE_UTILS_READ_FD]);
+    res = close(p_stdin[MANGOH_BRIDGE_UTILS_READ_FD]);
     if (res < 0)
     {
         LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
@@ -180,7 +180,7 @@ pid_t popen2(char** command, int* infp, int* outfp)
         goto cleanup;
     }
 
-    res = close(p_stdout[SWI_MANGOH_BRIDGE_UTILS_WRITE_FD]);
+    res = close(p_stdout[MANGOH_BRIDGE_UTILS_WRITE_FD]);
     if (res < 0)
     {
         LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
@@ -190,7 +190,7 @@ pid_t popen2(char** command, int* infp, int* outfp)
 
     if (infp == NULL)
     {
-        res = close(p_stdin[SWI_MANGOH_BRIDGE_UTILS_WRITE_FD]);
+        res = close(p_stdin[MANGOH_BRIDGE_UTILS_WRITE_FD]);
         if (res < 0)
         {
             LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
@@ -199,11 +199,11 @@ pid_t popen2(char** command, int* infp, int* outfp)
         }
     }
     else
-        *infp = p_stdin[SWI_MANGOH_BRIDGE_UTILS_WRITE_FD];
+        *infp = p_stdin[MANGOH_BRIDGE_UTILS_WRITE_FD];
 
     if (outfp == NULL)
     {
-        res = close(p_stdout[SWI_MANGOH_BRIDGE_UTILS_READ_FD]);
+        res = close(p_stdout[MANGOH_BRIDGE_UTILS_READ_FD]);
         if (res < 0)
         {
             LE_ERROR("ERROR close() failed(%d/%d)", res, errno);
@@ -212,7 +212,7 @@ pid_t popen2(char** command, int* infp, int* outfp)
         }
     }
     else
-        *outfp = p_stdout[SWI_MANGOH_BRIDGE_UTILS_READ_FD];
+        *outfp = p_stdout[MANGOH_BRIDGE_UTILS_READ_FD];
 
 cleanup:
     return pid;
