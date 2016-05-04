@@ -267,7 +267,7 @@ static int swi_mangoh_bridge_mailbox_datastorePut(void* param, const unsigned ch
     LE_ASSERT(data);
 
     const swi_mangoh_bridge_mailbox_datastore_put_req_t* const req = (swi_mangoh_bridge_mailbox_datastore_put_req_t*)data;
-    LE_DEBUG("---> DATASTORE PUT");
+    LE_INFO("---> DATASTORE PUT");
 
     const char search[2] = { SWI_MANGOH_BRIDGE_MAILBOX_SEPARATOR, 0 };
     char* params[SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_PARAMS] = {0};
@@ -276,7 +276,7 @@ static int swi_mangoh_bridge_mailbox_datastorePut(void* param, const unsigned ch
 
     while (token)
     {
-        LE_DEBUG("arg('%s')", token);
+        LE_INFO("arg('%s')", token);
         params[idx++] = token;
         token = strtok(NULL, search);
     }
@@ -309,7 +309,7 @@ static int swi_mangoh_bridge_mailbox_datastorePut(void* param, const unsigned ch
         rsp->result = false;
     }
 
-    LE_DEBUG("result(%d)", rsp->result);
+    LE_DEBUG("result(%s)", rsp->result ? "true" : "false");
     res = swi_mangoh_bridge_sendResult(mailbox->bridge, sizeof(swi_mangoh_bridge_mailbox_datastore_put_rsp_t));
     if (res != LE_OK)
     {

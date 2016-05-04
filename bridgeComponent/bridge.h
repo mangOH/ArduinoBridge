@@ -137,6 +137,7 @@ int swi_mangoh_bridge_sendAck(swi_mangoh_bridge_t*);
 int swi_mangoh_bridge_sendNack(swi_mangoh_bridge_t*);
 
 swi_mangoh_bridge_air_vantage_t* swi_mangoh_bridge_getAirVantageModule(void);
+le_log_TraceRef_t swi_mangoh_bridge_getTraceRef(void);
 
 int swi_mangoh_bridge_destroy(swi_mangoh_bridge_t*);
 

@@ -406,17 +406,18 @@ static int swi_mangoh_bridge_air_vantage_available(void* param, const unsigned c
 {
     swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
+    le_log_TraceRef_t traceRef = swi_mangoh_bridge_getTraceRef();
 
     LE_ASSERT(airVantage);
     LE_ASSERT(data);
 
-    LE_DEBUG("---> AVAIL");
+    LE_TRACE(traceRef, "---> AVAIL");
 
     swi_mangoh_bridge_air_vantage_avail_rsp_t* const rsp = (swi_mangoh_bridge_air_vantage_avail_rsp_t*)((swi_mangoh_bridge_t*)airVantage->bridge)->packet.msg.data;
 
-    LE_DEBUG("Rx buffer length(%u)", airVantage->rxBuffLen);
+    LE_TRACE(traceRef, "Rx buffer length(%u)", airVantage->rxBuffLen);
     rsp->result = htons(airVantage->rxBuffLen);
-    LE_DEBUG("result(%d)", rsp->result);
+    LE_TRACE(traceRef, "result(%d)", rsp->result);
     res = swi_mangoh_bridge_sendResult(airVantage->bridge, sizeof(rsp->result));
     if (res != LE_OK)
     {

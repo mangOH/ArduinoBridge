@@ -27,6 +27,8 @@ static int swi_mangoh_bridge_init(swi_mangoh_bridge_t*);
 
 static swi_mangoh_bridge_t bridge;
 
+static le_log_TraceRef_t BridgeTraceRef;
+
 static int swi_mangoh_bridge_read(swi_mangoh_bridge_t* bridge, unsigned char* data, unsigned int len)
 {
     int32_t res = LE_OK;
@@ -83,8 +85,11 @@ static int swi_mangoh_bridge_read(swi_mangoh_bridge_t* bridge, unsigned char* da
             }
         }
 
-        LE_DEBUG("received(%u)", len);
-        swi_mangoh_bridge_packet_dumpBuffer(data, len);
+        LE_TRACE(BridgeTraceRef, "received(%u)", len);
+        if(LE_IS_TRACE_ENABLED(BridgeTraceRef))
+        {
+            swi_mangoh_bridge_packet_dumpBuffer(data, len);
+        }
         res = len;
     }
 
@@ -99,8 +104,11 @@ static int swi_mangoh_bridge_write(const swi_mangoh_bridge_t* bridge, const unsi
     LE_ASSERT(bridge);
     LE_ASSERT(data);
 
-    swi_mangoh_bridge_packet_dumpBuffer(data, len);
-
+    if(LE_IS_TRACE_ENABLED(BridgeTraceRef))
+    {
+        swi_mangoh_bridge_packet_dumpBuffer(data, len);
+    }
+    
     const unsigned char* ptr = data;
     unsigned int msgLen = len;
 
@@ -135,7 +143,7 @@ static int swi_mangoh_bridge_process_msg_idx(swi_mangoh_bridge_t* bridge)
         goto cleanup;
     }
 
-    LE_DEBUG("message index(%u)", bridge->packet.msg.idx);
+    LE_TRACE(BridgeTraceRef, "message index(%u)", bridge->packet.msg.idx);
     bridge->packet.crc = swi_mangoh_bridge_packet_crcUpdate(bridge->packet.crc, &bridge->packet.msg.idx, sizeof(bridge->packet.msg.idx));
     res = LE_OK;
 
@@ -167,8 +175,8 @@ static int swi_mangoh_bridge_process_payload_len(swi_mangoh_bridge_t* bridge)
 
     if (bridge->packet.msg.len)
     {
-        LE_DEBUG("payload length(%u)", bridge->packet.msg.len);
-        LE_DEBUG("---> payload");
+        LE_TRACE(BridgeTraceRef, "payload length(%u)", bridge->packet.msg.len);
+        LE_TRACE(BridgeTraceRef, "---> payload");
 
         memset(bridge->packet.msg.data, 0, sizeof(bridge->packet.msg.data));
         res = swi_mangoh_bridge_read(bridge, bridge->packet.msg.data, bridge->packet.msg.len);
@@ -200,7 +208,7 @@ static int swi_mangoh_bridge_process_crc(swi_mangoh_bridge_t* bridge)
     }
 
     bridge->packet.msg.crc = ntohs(bridge->packet.msg.crc);
-    LE_DEBUG("CRC (0x%04x/0x%04x)", bridge->packet.crc, bridge->packet.msg.crc);
+    LE_TRACE(BridgeTraceRef, "CRC (0x%04x/0x%04x)", bridge->packet.crc, bridge->packet.msg.crc);
 
     if (bridge->packet.crc != bridge->packet.msg.crc)
     {
@@ -222,7 +230,7 @@ static int swi_mangoh_bridge_process_cmd(swi_mangoh_bridge_t* bridge)
     LE_ASSERT(bridge);
 
     swi_mangoh_bridge_packet_data_t* req = (swi_mangoh_bridge_packet_data_t*)bridge->packet.msg.data;
-    LE_DEBUG("command(0x%02x)", req->cmd);
+    LE_TRACE(BridgeTraceRef, "command(0x%02x)", req->cmd);
 
     if (!bridge->cmdHdlrs[req->cmd].fcn || !bridge->cmdHdlrs[req->cmd].module)
     {
@@ -333,7 +341,7 @@ static int swi_mangoh_bridge_reset(swi_mangoh_bridge_t* bridge)
     unsigned char* result = bridge->packet.msg.data;
     result[0] = res;
     memcpy(&result[1], bridge->packet.version, sizeof(bridge->packet.version));
-    LE_DEBUG("result(%d) version(%u.%u.%u)", result[0], result[1] - '0', result[2] - '0', result[3] - '0');
+    LE_TRACE(BridgeTraceRef, "result(%d) version(%u.%u.%u)", result[0], result[1] - '0', result[2] - '0', result[3] - '0');
     res = swi_mangoh_bridge_sendResult(bridge, sizeof(uint8_t) + sizeof(bridge->packet.version));
     if (res != LE_OK)
     {
@@ -511,7 +519,7 @@ static void swi_mangoh_bridge_eventHandler(int fd, short events)
         LE_ERROR("ERROR swi_mangoh_bridge_excute_runners() failed(%d)", res);
     }
 
-    LE_DEBUG("read '%s'", SWI_MANGOH_BRIDGE_SERIAL_PORT_FN);
+    LE_TRACE(BridgeTraceRef, "read '%s'", SWI_MANGOH_BRIDGE_SERIAL_PORT_FN);
     res = swi_mangoh_bridge_read(bridge, &bridge->packet.msg.start, sizeof(bridge->packet.msg.start));
     if (res < 0)
     {
@@ -519,7 +527,7 @@ static void swi_mangoh_bridge_eventHandler(int fd, short events)
     }
     else if (res > 0)
     {
-        LE_DEBUG("read 0x%02x", bridge->packet.msg.start);
+        LE_TRACE(BridgeTraceRef, "read 0x%02x", bridge->packet.msg.start);
         if (bridge->packet.msg.start == SWI_MANGOH_BRIDGE_PACKET_START)
         {
             res = swi_mangoh_bridge_process_msg(bridge);
@@ -672,6 +680,8 @@ static int swi_mangoh_bridge_init(swi_mangoh_bridge_t* bridge)
     LE_ASSERT(bridge);
     memset(bridge, 0, sizeof(swi_mangoh_bridge_t));
 
+    BridgeTraceRef = le_log_GetTraceRef("Bridge");
+
     memcpy(bridge->packet.version, version, sizeof(version));
     memcpy(bridge->packet.reset, reset, sizeof(reset));
     memcpy(bridge->packet.close, close, sizeof(close));
@@ -727,6 +737,12 @@ cleanup:
     return res;
 }
 
+
+le_log_TraceRef_t swi_mangoh_bridge_getTraceRef(void)
+{
+    return BridgeTraceRef;
+}
+
 int swi_mangoh_bridge_sendAck(swi_mangoh_bridge_t* bridge)
 {
     int32_t res = LE_OK;
@@ -776,7 +792,7 @@ int swi_mangoh_bridge_sendResult(swi_mangoh_bridge_t* bridge, uint32_t len)
     LE_ASSERT(bridge);
 
     swi_mangoh_bridge_packet_initResponse(&bridge->packet, len);
-    LE_DEBUG("<--- RSP length(%u)", len);
+    LE_TRACE(BridgeTraceRef, "<--- RSP length(%u)", len);
 
     res = swi_mangoh_bridge_write(bridge, (const uint8_t*)&bridge->packet.msg,
             sizeof(bridge->packet.msg.start) + sizeof(bridge->packet.msg.idx) + sizeof(bridge->packet.msg.len));
@@ -819,7 +835,7 @@ int swi_mangoh_bridge_registerCommandProcessor(swi_mangoh_bridge_t* bridge, uint
         goto cleanup;
     }
 
-    LE_DEBUG("command('%c')", cmd);
+    LE_TRACE(BridgeTraceRef, "command('%c')", cmd);
     bridge->cmdHdlrs[cmd].module = module;
     bridge->cmdHdlrs[cmd].fcn = cmdProc;
 
@@ -844,7 +860,7 @@ int swi_mangoh_bridge_registerRunner(swi_mangoh_bridge_t* bridge, void* module, 
     nextEntry->info.module = module;
     nextEntry->info.fcn = runner;
 
-    LE_DEBUG("register runner entry(%p)", nextEntry);
+    LE_TRACE(BridgeTraceRef, "register runner entry(%p)", nextEntry);
     le_sls_Queue(&bridge->runnerList, &nextEntry->link);
 
 cleanup:
@@ -868,7 +884,7 @@ int swi_mangoh_bridge_registerReset(swi_mangoh_bridge_t* bridge, void* module, s
     nextEntry->info.module = module;
     nextEntry->info.fcn = resetFcn;
 
-    LE_DEBUG("register reset entry(%p)", nextEntry);
+    LE_TRACE(BridgeTraceRef, "register reset entry(%p)", nextEntry);
     le_sls_Queue(&bridge->resetList, &nextEntry->link);
 
 cleanup:

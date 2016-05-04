@@ -3,7 +3,7 @@ TARGETS := ar7 wp7 ar86 wp85 localhost
 export MANGOH_ROOT ?= $(PWD)/../..
 
 .PHONY: all $(TARGETS)
-all: $(TARGETS)
+all: wp85
 
 $(TARGETS):
 	export TARGET=$@ ; \
