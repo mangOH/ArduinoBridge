@@ -2,49 +2,49 @@
 #include "utils.h"
 #include "json.h"
 
-static bool swi_mangoh_bridge_json_isDigit(const uint8_t*);
-static int swi_mangoh_bridge_json_hexToInt(const uint8_t*);
-static uint32_t swi_mangoh_bridge_json_getNextPowerOfTwo(uint32_t);
-static int32_t swi_mangoh_bridge_json_checkOutputBufferSize(uint8_t**, uint8_t**, uint32_t*, ssize_t);
-static uint8_t swi_mangoh_bridge_json_getEscapeChar(uint8_t);
-static bool swi_mangoh_bridge_json_readNext(uint8_t const**, uint32_t*);
-static void swi_mangoh_bridge_json_writeNext(uint8_t**, uint32_t*, uint32_t*, uint32_t);
-static int swi_mangoh_bridge_json_readChar(swi_mangoh_bridge_json_data_t*, uint8_t, uint32_t*, uint8_t**);
-static int swi_mangoh_bridge_json_skipWhitespace(uint8_t const**, uint32_t*, bool);
+static bool mangoh_bridge_json_isDigit(const uint8_t*);
+static int mangoh_bridge_json_hexToInt(const uint8_t*);
+static uint32_t mangoh_bridge_json_getNextPowerOfTwo(uint32_t);
+static int32_t mangoh_bridge_json_checkOutputBufferSize(uint8_t**, uint8_t**, uint32_t*, ssize_t);
+static uint8_t mangoh_bridge_json_getEscapeChar(uint8_t);
+static bool mangoh_bridge_json_readNext(uint8_t const**, uint32_t*);
+static void mangoh_bridge_json_writeNext(uint8_t**, uint32_t*, uint32_t*, uint32_t);
+static int mangoh_bridge_json_readChar(mangoh_bridge_json_data_t*, uint8_t, uint32_t*, uint8_t**);
+static int mangoh_bridge_json_skipWhitespace(uint8_t const**, uint32_t*, bool);
 
-static int swi_mangoh_bridge_json_readArray(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_readObject(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_readNumber(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_readString(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_readTrue(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_readFalse(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_readNull(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_readComment(uint8_t const**, uint32_t*);
-static int swi_mangoh_bridge_json_readData(uint8_t const**, uint32_t*, swi_mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readArray(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readObject(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readNumber(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readString(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readTrue(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readFalse(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readNull(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_readComment(uint8_t const**, uint32_t*);
+static int mangoh_bridge_json_readData(uint8_t const**, uint32_t*, mangoh_bridge_json_data_t**);
 
-static int swi_mangoh_bridge_json_writeBool(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeInteger(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeFloat(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeUnicode(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeString(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeNull(uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeArray(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeObject(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
-static int swi_mangoh_bridge_json_writeData(const swi_mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeBool(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeInteger(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeFloat(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeUnicode(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeString(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeNull(uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeArray(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeObject(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
+static int mangoh_bridge_json_writeData(const mangoh_bridge_json_data_t*, uint8_t**, uint32_t*, uint8_t**, uint32_t*);
 
-static void swi_mangoh_bridge_json_destroyData(swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_destroyArray(swi_mangoh_bridge_json_data_t**);
-static int swi_mangoh_bridge_json_destroyObject(swi_mangoh_bridge_json_data_t**);
+static void mangoh_bridge_json_destroyData(mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_destroyArray(mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_destroyObject(mangoh_bridge_json_data_t**);
 
-static int swi_mangoh_bridge_json_getAttribute(const swi_mangoh_bridge_json_data_t*, const char*, swi_mangoh_bridge_json_data_t**);
+static int mangoh_bridge_json_getAttribute(const mangoh_bridge_json_data_t*, const char*, mangoh_bridge_json_data_t**);
 
-static __inline bool swi_mangoh_bridge_json_isDigit(const uint8_t* in)
+static __inline bool mangoh_bridge_json_isDigit(const uint8_t* in)
 {
     LE_ASSERT(in);
     return ((*in <= '9') && (*in >= '0'));
 }
 
-static __inline int swi_mangoh_bridge_json_hexToInt(const uint8_t* in)
+static __inline int mangoh_bridge_json_hexToInt(const uint8_t* in)
 {
     LE_ASSERT(in);
     return (((*in <= '9') && (*in >= '0')) ? (*in - '0'):
@@ -52,7 +52,7 @@ static __inline int swi_mangoh_bridge_json_hexToInt(const uint8_t* in)
             ((*in <= 'f') && (*in >= 'a')) ? (*in - 'a' + 10):0);
 }
 
-static __inline uint32_t swi_mangoh_bridge_json_getNextPowerOfTwo(uint32_t n)
+static __inline uint32_t mangoh_bridge_json_getNextPowerOfTwo(uint32_t n)
 {
   uint32_t k = 1;
   while (k < n)
@@ -61,7 +61,7 @@ static __inline uint32_t swi_mangoh_bridge_json_getNextPowerOfTwo(uint32_t n)
   return k;
 }
 
-static int32_t swi_mangoh_bridge_json_checkOutputBufferSize(uint8_t** outBuff, uint8_t** outBuffPtr, uint32_t* allocLen, ssize_t size)
+static int32_t mangoh_bridge_json_checkOutputBufferSize(uint8_t** outBuff, uint8_t** outBuffPtr, uint32_t* allocLen, ssize_t size)
 {
     int32_t res = LE_OK;
 
@@ -73,7 +73,7 @@ static int32_t swi_mangoh_bridge_json_checkOutputBufferSize(uint8_t** outBuff, u
     if (*allocLen < size)
     {
         uint32_t len = *outBuffPtr - *outBuff;
-        uint32_t incr = swi_mangoh_bridge_json_getNextPowerOfTwo(len + size);
+        uint32_t incr = mangoh_bridge_json_getNextPowerOfTwo(len + size);
 
         LE_DEBUG("realloc(%u)", incr);
         uint8_t* tempPtr = realloc(*outBuff, incr);
@@ -95,7 +95,7 @@ cleanup:
     return res;
 }
 
-static uint8_t swi_mangoh_bridge_json_getEscapeChar(uint8_t val)
+static uint8_t mangoh_bridge_json_getEscapeChar(uint8_t val)
 {
     switch (val)
     {
@@ -115,7 +115,7 @@ static uint8_t swi_mangoh_bridge_json_getEscapeChar(uint8_t val)
     return 0;
 }
 
-static bool swi_mangoh_bridge_json_readNext(uint8_t const** ptr, uint32_t* len)
+static bool mangoh_bridge_json_readNext(uint8_t const** ptr, uint32_t* len)
 {
     LE_ASSERT(ptr && *ptr);
     LE_ASSERT(len);
@@ -125,7 +125,7 @@ static bool swi_mangoh_bridge_json_readNext(uint8_t const** ptr, uint32_t* len)
     return *len ? true:false;
 }
 
-static void swi_mangoh_bridge_json_writeNext(uint8_t** ptr, uint32_t* allocLen, uint32_t* len, uint32_t size)
+static void mangoh_bridge_json_writeNext(uint8_t** ptr, uint32_t* allocLen, uint32_t* len, uint32_t size)
 {
     LE_ASSERT(ptr && *ptr);
     LE_ASSERT(allocLen);
@@ -137,7 +137,7 @@ static void swi_mangoh_bridge_json_writeNext(uint8_t** ptr, uint32_t* allocLen, 
     *allocLen -= size;
 }
 
-static int swi_mangoh_bridge_json_readChar(swi_mangoh_bridge_json_data_t* jsonData, uint8_t val, uint32_t* allocLen, uint8_t** out)
+static int mangoh_bridge_json_readChar(mangoh_bridge_json_data_t* jsonData, uint8_t val, uint32_t* allocLen, uint8_t** out)
 {
     int32_t res = LE_OK;
 
@@ -172,7 +172,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_skipWhitespace(uint8_t const** in, uint32_t* len, bool forward)
+static int mangoh_bridge_json_skipWhitespace(uint8_t const** in, uint32_t* len, bool forward)
 {
     int32_t res = LE_OK;
 
@@ -184,10 +184,10 @@ static int swi_mangoh_bridge_json_skipWhitespace(uint8_t const** in, uint32_t* l
     {
         if (*ptr == '/')
         {
-            res = swi_mangoh_bridge_json_readComment(&ptr, len);
+            res = mangoh_bridge_json_readComment(&ptr, len);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_readComment() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_readComment() failed(%d)", res);
                 goto cleanup;
             }
         }
@@ -205,7 +205,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readArray(uint8_t const** data, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readArray(uint8_t const** data, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_FORMAT_ERROR;
 
@@ -213,7 +213,7 @@ static int swi_mangoh_bridge_json_readArray(uint8_t const** data, uint32_t* len,
     LE_ASSERT(len);
     LE_ASSERT(jsonData && (*jsonData == NULL));
 
-    *jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -223,7 +223,7 @@ static int swi_mangoh_bridge_json_readArray(uint8_t const** data, uint32_t* len,
 
     LE_DEBUG("ARRAY START");
     (*jsonData)->len = sizeof((*jsonData)->data.arrayVal);
-    (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY;
+    (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY;
     (*jsonData)->data.arrayVal = LE_SLS_LIST_INIT;
 
     const uint8_t* ptr = (uint8_t*)*data;
@@ -233,17 +233,17 @@ static int swi_mangoh_bridge_json_readArray(uint8_t const** data, uint32_t* len,
         goto cleanup;
     }
 
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-    res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
         goto cleanup;
     }
 
     while (*ptr != ']')
     {
-        swi_mangoh_bridge_json_array_item_t* jsonItemData = calloc(1, sizeof(swi_mangoh_bridge_json_array_item_t));
+        mangoh_bridge_json_array_item_t* jsonItemData = calloc(1, sizeof(mangoh_bridge_json_array_item_t));
         if (!jsonItemData)
         {
             LE_ERROR("ERROR calloc() failed");
@@ -251,20 +251,20 @@ static int swi_mangoh_bridge_json_readArray(uint8_t const** data, uint32_t* len,
             goto cleanup;
         }
 
-        res = swi_mangoh_bridge_json_readData(&ptr, len, &jsonItemData->item);
+        res = mangoh_bridge_json_readData(&ptr, len, &jsonItemData->item);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_readData() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_readData() failed(%d)", res);
             goto cleanup;
         }
 
         jsonItemData->link = LE_SLS_LINK_INIT;
         le_sls_Queue(&(*jsonData)->data.arrayVal, &jsonItemData->link);
 
-        res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+        res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
             goto cleanup;
         }
 
@@ -276,21 +276,21 @@ static int swi_mangoh_bridge_json_readArray(uint8_t const** data, uint32_t* len,
 
         if (*ptr == ',')
         {
-            if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-            res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+            if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+            res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
                 goto cleanup;
             }
         }
     }
 
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-    res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
         goto cleanup;
     }
 
@@ -302,16 +302,16 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
-    swi_mangoh_bridge_json_data_t* jsonKeyData = NULL;
+    mangoh_bridge_json_data_t* jsonKeyData = NULL;
     int32_t res = LE_FORMAT_ERROR;
 
     LE_ASSERT(data && *data);
     LE_ASSERT(len);
     LE_ASSERT(jsonData && (*jsonData == NULL));
 
-    *jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -321,7 +321,7 @@ static int swi_mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len
 
     LE_DEBUG("OBJECT START");
     (*jsonData)->len = sizeof((*jsonData)->data.objVal);
-    (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT;
+    (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT;
     (*jsonData)->data.objVal = LE_SLS_LIST_INIT;
 
     const uint8_t* ptr = (uint8_t*)*data;
@@ -331,27 +331,27 @@ static int swi_mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len
         goto cleanup;
     }
 
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-    res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
         goto cleanup;
     }
 
     while (*ptr != '}')
     {
-        res = swi_mangoh_bridge_json_readString(&ptr, len, &jsonKeyData);
+        res = mangoh_bridge_json_readString(&ptr, len, &jsonKeyData);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_readString() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_readString() failed(%d)", res);
             goto cleanup;
         }
 
-        res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+        res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
             goto cleanup;
         }
 
@@ -361,15 +361,15 @@ static int swi_mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len
             goto cleanup;
         }
 
-        if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-        res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+        if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+        res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
             goto cleanup;
         }
 
-        swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(swi_mangoh_bridge_json_array_obj_item_t));
+        mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(mangoh_bridge_json_array_obj_item_t));
         if (!jsonItemData)
         {
             LE_ERROR("ERROR calloc() failed");
@@ -386,29 +386,29 @@ static int swi_mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len
         }
         strcpy(jsonItemData->attribute, jsonKeyData->data.strVal);
 
-        res = swi_mangoh_bridge_json_readData(&ptr, len, &jsonItemData->item);
+        res = mangoh_bridge_json_readData(&ptr, len, &jsonItemData->item);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_readData() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_readData() failed(%d)", res);
             goto cleanup;
         }
 
         jsonItemData->link = LE_SLS_LINK_INIT;
         le_sls_Queue(&(*jsonData)->data.objVal, &jsonItemData->link);
 
-        res = swi_mangoh_bridge_json_destroy(&jsonKeyData);
+        res = mangoh_bridge_json_destroy(&jsonKeyData);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", res);
             goto cleanup;
         }
 
         if (*len)
         {
-            res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+            res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
                 goto cleanup;
             }
 
@@ -421,22 +421,22 @@ static int swi_mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len
 
             if (*ptr == ',')
             {
-                if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-                res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+                if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+                res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
                 if (res != LE_OK)
                 {
-                    LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+                    LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
                     goto cleanup;
                 }
             }
         }
     }
 
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-    res = swi_mangoh_bridge_json_skipWhitespace(&ptr, len, true);
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    res = mangoh_bridge_json_skipWhitespace(&ptr, len, true);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
         goto cleanup;
     }
 
@@ -447,17 +447,17 @@ static int swi_mangoh_bridge_json_readObject(uint8_t const** data, uint32_t* len
 cleanup:
     if (res)
     {
-        int32_t err = swi_mangoh_bridge_json_destroy(&jsonKeyData);
+        int32_t err = mangoh_bridge_json_destroy(&jsonKeyData);
         if (err != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
         }
     }
 
     return res;
 }
 
-static int swi_mangoh_bridge_json_readNumber(uint8_t const** data, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readNumber(uint8_t const** data, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_FORMAT_ERROR;
 
@@ -465,7 +465,7 @@ static int swi_mangoh_bridge_json_readNumber(uint8_t const** data, uint32_t* len
     LE_ASSERT(len);
     LE_ASSERT(jsonData && (*jsonData == NULL));
 
-    *jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -476,26 +476,26 @@ static int swi_mangoh_bridge_json_readNumber(uint8_t const** data, uint32_t* len
     const uint8_t* ptr = (uint8_t*)*data;
     bool isFloat = false;
     bool isNegative = false;
-    while (swi_mangoh_bridge_json_isDigit(ptr) || (!isFloat && (*ptr == '.')) || (!isNegative && (*ptr == '-')))
+    while (mangoh_bridge_json_isDigit(ptr) || (!isFloat && (*ptr == '.')) || (!isNegative && (*ptr == '-')))
     {
         isFloat = isFloat || (*ptr == '.');
         isNegative = isNegative || (*ptr == '-');
 
-        if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+        if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
     }
 
     if (isFloat)
     {
         (*jsonData)->data.dVal = atof((const char*)*data);
         (*jsonData)->len = sizeof((*jsonData)->data.dVal);
-        (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT;
+        (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT;
         LE_DEBUG("FLOAT(%lf)", (*jsonData)->data.dVal);
     }
     else
     {
         (*jsonData)->data.iVal = atoi((const char*)*data);
         (*jsonData)->len = sizeof((*jsonData)->data.iVal);
-        (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_INT;
+        (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_INT;
         LE_DEBUG("INTEGER(%lld)", (*jsonData)->data.iVal);
     }
 
@@ -506,7 +506,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readString(uint8_t const** data, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readString(uint8_t const** data, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_FORMAT_ERROR;
 
@@ -514,7 +514,7 @@ static int swi_mangoh_bridge_json_readString(uint8_t const** data, uint32_t* len
     LE_ASSERT(len);
     LE_ASSERT(jsonData && (*jsonData == NULL));
 
-    *jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -522,9 +522,9 @@ static int swi_mangoh_bridge_json_readString(uint8_t const** data, uint32_t* len
         goto cleanup;
     }
 
-    uint32_t allocLen = SWI_MANGOH_BRIDGE_JSON_STRING_ALLOC_LEN;
+    uint32_t allocLen = MANGOH_BRIDGE_JSON_STRING_ALLOC_LEN;
     (*jsonData)->len = allocLen;
-    (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
+    (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
     (*jsonData)->data.strVal = malloc(allocLen);
     if (!(*jsonData)->data.strVal)
     {
@@ -540,41 +540,41 @@ static int swi_mangoh_bridge_json_readString(uint8_t const** data, uint32_t* len
         goto cleanup;
     }
 
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     char* out = (*jsonData)->data.strVal;
     while ((*len > 0) && (*ptr != '"'))
     {
         if (*ptr == '\\')
         {
-            if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+            if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
             if ((*ptr == 'b') || (*ptr == 'r') || (*ptr == 'n') || (*ptr == 'f') || (*ptr == 't'))
             {
-                const uint8_t escape = swi_mangoh_bridge_json_getEscapeChar(*ptr);
-                if (swi_mangoh_bridge_json_readChar(*jsonData, escape, &allocLen, (uint8_t**)&out) != LE_OK) goto cleanup;
-                if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+                const uint8_t escape = mangoh_bridge_json_getEscapeChar(*ptr);
+                if (mangoh_bridge_json_readChar(*jsonData, escape, &allocLen, (uint8_t**)&out) != LE_OK) goto cleanup;
+                if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
             }
             else if (*ptr == 'u')
             {
-                (*jsonData)->data.unicodeVal.val = swi_mangoh_bridge_json_hexToInt(ptr) * 4096;
-                if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+                (*jsonData)->data.unicodeVal.val = mangoh_bridge_json_hexToInt(ptr) * 4096;
+                if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
-                (*jsonData)->data.unicodeVal.val += swi_mangoh_bridge_json_hexToInt(ptr) * 256;
-                if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+                (*jsonData)->data.unicodeVal.val += mangoh_bridge_json_hexToInt(ptr) * 256;
+                if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
-                (*jsonData)->data.unicodeVal.val += swi_mangoh_bridge_json_hexToInt(ptr) * 16;
-                if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+                (*jsonData)->data.unicodeVal.val += mangoh_bridge_json_hexToInt(ptr) * 16;
+                if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
-                (*jsonData)->data.unicodeVal.val += swi_mangoh_bridge_json_hexToInt(ptr);
-                if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+                (*jsonData)->data.unicodeVal.val += mangoh_bridge_json_hexToInt(ptr);
+                if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
                 free((*jsonData)->data.strVal);
                 (*jsonData)->data.strVal = NULL;
 
                 LE_DEBUG("UNICODE('\\u%04x')", (*jsonData)->data.unicodeVal.val);
                 (*jsonData)->len = sizeof((*jsonData)->data.unicodeVal.val);
-                (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE;
+                (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE;
             }
             else if ((*ptr != '"') && (*ptr != '\\') && (*ptr != '/'))
             {
@@ -584,13 +584,13 @@ static int swi_mangoh_bridge_json_readString(uint8_t const** data, uint32_t* len
         }
         else
         {
-            if (swi_mangoh_bridge_json_readChar(*jsonData, *ptr, &allocLen, (uint8_t**)&out) != LE_OK) goto cleanup;
-            if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+            if (mangoh_bridge_json_readChar(*jsonData, *ptr, &allocLen, (uint8_t**)&out) != LE_OK) goto cleanup;
+            if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
         }
     }
 
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
-    if (swi_mangoh_bridge_json_readChar(*jsonData, '\0', &allocLen, (uint8_t**)&out) != LE_OK) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (mangoh_bridge_json_readChar(*jsonData, '\0', &allocLen, (uint8_t**)&out) != LE_OK) goto cleanup;
 
     if ((*jsonData)->data.strVal)
     {
@@ -604,7 +604,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readTrue(uint8_t const** data, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readTrue(uint8_t const** data, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_FORMAT_ERROR;
 
@@ -612,7 +612,7 @@ static int swi_mangoh_bridge_json_readTrue(uint8_t const** data, uint32_t* len, 
     LE_ASSERT(len);
     LE_ASSERT(jsonData && (*jsonData == NULL));
 
-    *jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -621,22 +621,22 @@ static int swi_mangoh_bridge_json_readTrue(uint8_t const** data, uint32_t* len, 
     }
 
     LE_DEBUG("TRUE");
-    (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN;
+    (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN;
     (*jsonData)->data.bVal = true;
     (*jsonData)->len = sizeof((*jsonData)->data.bVal);
 
     const uint8_t* ptr = (uint8_t*)*data;
     if (*ptr != 't') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'r') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'u') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'e') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     *data = ptr;
     res = LE_OK;
@@ -645,7 +645,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readFalse(uint8_t const** data, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readFalse(uint8_t const** data, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_FORMAT_ERROR;
 
@@ -653,7 +653,7 @@ static int swi_mangoh_bridge_json_readFalse(uint8_t const** data, uint32_t* len,
     LE_ASSERT(len);
     LE_ASSERT(jsonData && (*jsonData == NULL));
 
-    *jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -662,25 +662,25 @@ static int swi_mangoh_bridge_json_readFalse(uint8_t const** data, uint32_t* len,
     }
 
     LE_DEBUG("FALSE");
-    (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN;
+    (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN;
     (*jsonData)->data.bVal = false;
     (*jsonData)->len = sizeof((*jsonData)->data.bVal);
 
     const uint8_t* ptr = (uint8_t*)*data;
     if (*ptr != 'f') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'a') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'l') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 's') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'e') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     *data = ptr;
     res = LE_OK;
@@ -689,7 +689,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readNull(uint8_t const** data, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readNull(uint8_t const** data, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_FORMAT_ERROR;
 
@@ -697,7 +697,7 @@ static int swi_mangoh_bridge_json_readNull(uint8_t const** data, uint32_t* len, 
     LE_ASSERT(len);
     LE_ASSERT(jsonData && (*jsonData == NULL));
 
-    *jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -706,20 +706,20 @@ static int swi_mangoh_bridge_json_readNull(uint8_t const** data, uint32_t* len, 
     }
 
     LE_DEBUG("NULL");
-    (*jsonData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_NULL;
+    (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_NULL;
 
     const uint8_t* ptr = (uint8_t*)*data;
     if (*ptr != 'n') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'u') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'l') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr != 'l') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     *data = ptr;
     res = LE_OK;
@@ -728,7 +728,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readComment(uint8_t const** data, uint32_t* len)
+static int mangoh_bridge_json_readComment(uint8_t const** data, uint32_t* len)
 {
     int32_t res = LE_FORMAT_ERROR;
 
@@ -739,31 +739,31 @@ static int swi_mangoh_bridge_json_readComment(uint8_t const** data, uint32_t* le
 
     const uint8_t* ptr = (uint8_t*)*data;
     if (*ptr != '/') goto cleanup;
-    if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+    if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
     if (*ptr == '/')
     {
-        if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+        if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
         while ((*ptr != '\n') && (*ptr != '\r'))
         {
-            if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+            if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
         }
     }
     else if (*ptr == '*')
     {
-        if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+        if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
         while (1)
         {
             if (*ptr == '*')
             {
-                if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+                if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
 
                 if (*ptr == '/') break;
             }
 
-            if (!swi_mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
+            if (!mangoh_bridge_json_readNext(&ptr, len)) goto cleanup;
         }
     }
     else
@@ -778,7 +778,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_readData(uint8_t const** ptr, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_readData(uint8_t const** ptr, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_OK;
 
@@ -786,10 +786,10 @@ static int swi_mangoh_bridge_json_readData(uint8_t const** ptr, uint32_t* len, s
     LE_ASSERT(len);
     LE_ASSERT(jsonData);
 
-    res = swi_mangoh_bridge_json_skipWhitespace(ptr, len, true);
+    res = mangoh_bridge_json_skipWhitespace(ptr, len, true);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
         goto cleanup;
     }
 
@@ -800,43 +800,43 @@ static int swi_mangoh_bridge_json_readData(uint8_t const** ptr, uint32_t* len, s
         goto cleanup;
     }
 
-    bool isDigit = swi_mangoh_bridge_json_isDigit(*ptr);
+    bool isDigit = mangoh_bridge_json_isDigit(*ptr);
     switch (*(*ptr))
     {
     case '{':
-        res = swi_mangoh_bridge_json_readObject(ptr, len, jsonData);
+        res = mangoh_bridge_json_readObject(ptr, len, jsonData);
         break;
 
     case '[':
-        res = swi_mangoh_bridge_json_readArray(ptr, len, jsonData);
+        res = mangoh_bridge_json_readArray(ptr, len, jsonData);
         break;
 
     case '"':
-        res = swi_mangoh_bridge_json_readString(ptr, len, jsonData);
+        res = mangoh_bridge_json_readString(ptr, len, jsonData);
         break;
 
     case '-':
-        res = swi_mangoh_bridge_json_readNumber(ptr, len, jsonData);
+        res = mangoh_bridge_json_readNumber(ptr, len, jsonData);
         break;
 
     case 't':
-        res = swi_mangoh_bridge_json_readTrue(ptr, len, jsonData);
+        res = mangoh_bridge_json_readTrue(ptr, len, jsonData);
         break;
 
     case 'f':
-        res = swi_mangoh_bridge_json_readFalse(ptr, len, jsonData);
+        res = mangoh_bridge_json_readFalse(ptr, len, jsonData);
         break;
 
     case '/':
-        res = swi_mangoh_bridge_json_readComment(ptr, len);
+        res = mangoh_bridge_json_readComment(ptr, len);
         break;
 
     case 'n':
-        res = swi_mangoh_bridge_json_readNull(ptr, len, jsonData);
+        res = mangoh_bridge_json_readNull(ptr, len, jsonData);
         break;
 
     default:
-        if (isDigit) res = swi_mangoh_bridge_json_readNumber(ptr, len, jsonData);
+        if (isDigit) res = mangoh_bridge_json_readNumber(ptr, len, jsonData);
         else res = LE_BAD_PARAMETER;
         break;
     }
@@ -846,127 +846,127 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeBool(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeBool(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     const char* boolStr = jsonData->data.bVal ? "true":"false";
     int32_t res = LE_OK;
 
-    LE_ASSERT(jsonData && (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN));
+    LE_ASSERT(jsonData && (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN));
     LE_ASSERT(buff);
     LE_ASSERT(allocLen);
     LE_ASSERT(ptr);
     LE_ASSERT(len);
 
-    const uint32_t size = jsonData->data.bVal ? SWI_MANGOH_BRIDGE_JSON_TRUE_LEN:SWI_MANGOH_BRIDGE_JSON_FALSE_LEN;
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
+    const uint32_t size = jsonData->data.bVal ? MANGOH_BRIDGE_JSON_TRUE_LEN:MANGOH_BRIDGE_JSON_FALSE_LEN;
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
-    LE_DEBUG("BOOL('%s')", jsonData->data.bVal ? SWI_MANGOH_BRIDGE_JSON_TRUE:SWI_MANGOH_BRIDGE_JSON_FALSE);
+    LE_DEBUG("BOOL('%s')", jsonData->data.bVal ? MANGOH_BRIDGE_JSON_TRUE:MANGOH_BRIDGE_JSON_FALSE);
     memcpy(*ptr, boolStr, size);
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeInteger(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeInteger(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     int32_t res = LE_OK;
 
-    LE_ASSERT(jsonData && (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_INT));
+    LE_ASSERT(jsonData && (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_INT));
     LE_ASSERT(buff);
     LE_ASSERT(allocLen);
     LE_ASSERT(ptr);
     LE_ASSERT(len);
 
-    char buffer[SWI_MANGOH_BRIDGE_JSON_INTEGER_MAX_LEN] = {0};
-    snprintf(buffer, SWI_MANGOH_BRIDGE_JSON_INTEGER_MAX_LEN, "%lld", jsonData->data.iVal);
+    char buffer[MANGOH_BRIDGE_JSON_INTEGER_MAX_LEN] = {0};
+    snprintf(buffer, MANGOH_BRIDGE_JSON_INTEGER_MAX_LEN, "%lld", jsonData->data.iVal);
 
     const uint32_t size = strlen(buffer);
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("INTEGER('%s')", buffer);
     memcpy(*ptr, buffer, size);
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeFloat(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeFloat(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     int32_t res = LE_OK;
 
-    LE_ASSERT(jsonData && (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT));
+    LE_ASSERT(jsonData && (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT));
     LE_ASSERT(buff);
     LE_ASSERT(allocLen);
     LE_ASSERT(ptr);
     LE_ASSERT(len);
 
-    char buffer[SWI_MANGOH_BRIDGE_JSON_FLOAT_MAX_LEN] = {0};
-    snprintf(buffer, SWI_MANGOH_BRIDGE_JSON_FLOAT_MAX_LEN, "%lf", jsonData->data.dVal);
+    char buffer[MANGOH_BRIDGE_JSON_FLOAT_MAX_LEN] = {0};
+    snprintf(buffer, MANGOH_BRIDGE_JSON_FLOAT_MAX_LEN, "%lf", jsonData->data.dVal);
 
     const uint32_t size = strlen(buffer);
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("FLOAT('%s')", buffer);
     memcpy(*ptr, buffer, size);
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeUnicode(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeUnicode(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     int32_t res = LE_OK;
 
-    LE_ASSERT(jsonData && (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE));
+    LE_ASSERT(jsonData && (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE));
     LE_ASSERT(buff);
     LE_ASSERT(allocLen);
     LE_ASSERT(ptr);
     LE_ASSERT(len);
 
-    char unicodeStr[SWI_MANGOH_BRIDGE_JSON_UNICODE_BUFFER_LEN + strlen("\\u") + 1];
-    snprintf(unicodeStr, SWI_MANGOH_BRIDGE_JSON_UNICODE_BUFFER_LEN, "\\u%x%x%x%x",
+    char unicodeStr[MANGOH_BRIDGE_JSON_UNICODE_BUFFER_LEN + strlen("\\u") + 1];
+    snprintf(unicodeStr, MANGOH_BRIDGE_JSON_UNICODE_BUFFER_LEN, "\\u%x%x%x%x",
             jsonData->data.unicodeVal.bytes[0], jsonData->data.unicodeVal.bytes[1], jsonData->data.unicodeVal.bytes[2], jsonData->data.unicodeVal.bytes[3]);
 
     const uint32_t size = strlen(unicodeStr);
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("UNICODE('%s')", unicodeStr);
     memcpy(*ptr, unicodeStr, size);
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeString(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeString(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     char* repl = NULL;
     int32_t res = LE_OK;
 
-    LE_ASSERT(jsonData && (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING) && jsonData->data.strVal);
+    LE_ASSERT(jsonData && (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_STRING) && jsonData->data.strVal);
     LE_ASSERT(buff);
     LE_ASSERT(allocLen);
     LE_ASSERT(ptr);
@@ -1040,46 +1040,46 @@ static int swi_mangoh_bridge_json_writeString(const swi_mangoh_bridge_json_data_
     free(repl);
     repl = temp;
 
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     **ptr = '"';
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
 
     const uint32_t size = strlen(repl);
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("STRING('%s')", repl);
     memcpy(*ptr, repl, size);
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
 
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     **ptr = '"';
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
 
 cleanup:
     if (repl) free(repl);
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeNull(uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeNull(uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
-    const char* nullStr = SWI_MANGOH_BRIDGE_JSON_NULL;
+    const char* nullStr = MANGOH_BRIDGE_JSON_NULL;
     int32_t res = LE_OK;
 
     LE_ASSERT(buff);
@@ -1087,59 +1087,59 @@ static int swi_mangoh_bridge_json_writeNull(uint8_t** buff, uint32_t* allocLen, 
     LE_ASSERT(ptr);
     LE_ASSERT(len);
 
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, SWI_MANGOH_BRIDGE_JSON_NULL_LEN);
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, MANGOH_BRIDGE_JSON_NULL_LEN);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("NULL");
-    memcpy(*ptr, nullStr, SWI_MANGOH_BRIDGE_JSON_NULL_LEN);
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, SWI_MANGOH_BRIDGE_JSON_NULL_LEN);
+    memcpy(*ptr, nullStr, MANGOH_BRIDGE_JSON_NULL_LEN);
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, MANGOH_BRIDGE_JSON_NULL_LEN);
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeArray(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeArray(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     int32_t res = LE_OK;
 
-    LE_ASSERT(jsonData && (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY));
+    LE_ASSERT(jsonData && (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY));
     LE_ASSERT(buff);
     LE_ASSERT(allocLen);
     LE_ASSERT(ptr);
     LE_ASSERT(len);
 
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("["));
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("["));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("ARRAY BEGIN");
     **ptr = '[';
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("["));
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("["));
 
     const le_sls_Link_t* link = le_sls_Peek(&jsonData->data.arrayVal);
     while (link)
     {
-        swi_mangoh_bridge_json_array_item_t* jsonItemData = CONTAINER_OF(link, swi_mangoh_bridge_json_array_item_t, link);
+        mangoh_bridge_json_array_item_t* jsonItemData = CONTAINER_OF(link, mangoh_bridge_json_array_item_t, link);
 
-        res = swi_mangoh_bridge_json_writeData(jsonItemData->item, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeData(jsonItemData->item, buff, allocLen, ptr, len);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_writeData() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_writeData() failed(%d)", res);
             res = LE_NO_MEMORY;
             goto cleanup;
         }
 
-        res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen(","));
+        res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen(","));
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
             goto cleanup;
         }
 
@@ -1147,108 +1147,108 @@ static int swi_mangoh_bridge_json_writeArray(const swi_mangoh_bridge_json_data_t
         if (link)
         {
             **ptr = ',';
-            swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen(","));
+            mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen(","));
         }
     }
 
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("]"));
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("]"));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     **ptr = ']';
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("]"));
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("]"));
     LE_DEBUG("ARRAY END");
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeObject(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeObject(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     int32_t res = LE_OK;
 
-    LE_ASSERT(jsonData && (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT));
+    LE_ASSERT(jsonData && (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT));
     LE_ASSERT(buff);
     LE_ASSERT(allocLen);
     LE_ASSERT(ptr);
     LE_ASSERT(len);
 
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("{"));
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("{"));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("OBJECT BEGIN");
     **ptr = '{';
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("{"));
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("{"));
 
     const le_sls_Link_t* link = le_sls_Peek(&jsonData->data.objVal);
     while (link)
     {
-        swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = CONTAINER_OF(link, swi_mangoh_bridge_json_array_obj_item_t, link);
+        mangoh_bridge_json_array_obj_item_t* jsonItemData = CONTAINER_OF(link, mangoh_bridge_json_array_obj_item_t, link);
 
-        res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
+        res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
             goto cleanup;
         }
 
         **ptr = '"';
-        swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
+        mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
 
         const uint32_t size = strlen(jsonItemData->attribute);
-        res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
+        res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
             goto cleanup;
         }
 
         LE_DEBUG("ATTRIBUTE('%s')", jsonItemData->attribute);
         memcpy(*ptr, jsonItemData->attribute, strlen(jsonItemData->attribute));
-        swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
+        mangoh_bridge_json_writeNext(ptr, allocLen, len, size);
 
-        res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
+        res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("\""));
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
             goto cleanup;
         }
 
         **ptr = '"';
-        swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
+        mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("\""));
 
-        res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen(":"));
+        res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen(":"));
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
             goto cleanup;
         }
 
         **ptr = ':';
-        swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen(":"));
+        mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen(":"));
 
         if (jsonItemData->item)
         {
-            res = swi_mangoh_bridge_json_writeData(jsonItemData->item, buff, allocLen, ptr, len);
+            res = mangoh_bridge_json_writeData(jsonItemData->item, buff, allocLen, ptr, len);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_writeData() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_writeData() failed(%d)", res);
                 goto cleanup;
             }
         }
         else
         {
-            res = swi_mangoh_bridge_json_writeNull(buff, allocLen, ptr, len);
+            res = mangoh_bridge_json_writeNull(buff, allocLen, ptr, len);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_writeNull() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_writeNull() failed(%d)", res);
                 goto cleanup;
             }
         }
@@ -1257,26 +1257,26 @@ static int swi_mangoh_bridge_json_writeObject(const swi_mangoh_bridge_json_data_
         if (link)
         {
             **ptr = ',';
-            swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen(","));
+            mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen(","));
         }
     }
 
-    res = swi_mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("}"));
+    res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, strlen("}"));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_checkOutputBufferSize() failed(%d)", res);
         goto cleanup;
     }
 
     **ptr = '}';
-    swi_mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("}"));
+    mangoh_bridge_json_writeNext(ptr, allocLen, len, strlen("}"));
     LE_DEBUG("OBJECT END");
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_writeData(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
+static int mangoh_bridge_json_writeData(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* allocLen, uint8_t** ptr, uint32_t* len)
 {
     int res = LE_OK;
 
@@ -1288,44 +1288,44 @@ static int swi_mangoh_bridge_json_writeData(const swi_mangoh_bridge_json_data_t*
 
     switch (jsonData->type)
     {
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN:
         LE_DEBUG("BOOL");
-        res = swi_mangoh_bridge_json_writeBool(jsonData, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeBool(jsonData, buff, allocLen, ptr, len);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_INT:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_INT:
         LE_DEBUG("INTEGER");
-        res = swi_mangoh_bridge_json_writeInteger(jsonData, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeInteger(jsonData, buff, allocLen, ptr, len);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT:
         LE_DEBUG("FLOAT");
-        res = swi_mangoh_bridge_json_writeFloat(jsonData, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeFloat(jsonData, buff, allocLen, ptr, len);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE:
         LE_DEBUG("UNICODE");
-        res = swi_mangoh_bridge_json_writeUnicode(jsonData, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeUnicode(jsonData, buff, allocLen, ptr, len);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_STRING:
         LE_DEBUG("STRING");
-        res = swi_mangoh_bridge_json_writeString(jsonData, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeString(jsonData, buff, allocLen, ptr, len);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_NULL:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_NULL:
         LE_DEBUG("NULL");
-        res = swi_mangoh_bridge_json_writeNull(buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeNull(buff, allocLen, ptr, len);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY:
         LE_DEBUG("ARRAY");
-        res = swi_mangoh_bridge_json_writeArray(jsonData, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeArray(jsonData, buff, allocLen, ptr, len);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT:
         LE_DEBUG("OBJECT");
-        res = swi_mangoh_bridge_json_writeObject(jsonData, buff, allocLen, ptr, len);
+        res = mangoh_bridge_json_writeObject(jsonData, buff, allocLen, ptr, len);
         break;
 
     default:
@@ -1338,11 +1338,11 @@ cleanup:
     return res;
 }
 
-static void swi_mangoh_bridge_json_destroyData(swi_mangoh_bridge_json_data_t** jsonData)
+static void mangoh_bridge_json_destroyData(mangoh_bridge_json_data_t** jsonData)
 {
     LE_ASSERT(jsonData && *jsonData);
 
-    if ((*jsonData)->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING)
+    if ((*jsonData)->type == MANGOH_BRIDGE_JSON_DATA_TYPE_STRING)
     {
         LE_DEBUG("STRING");
         if ((*jsonData)->data.strVal)
@@ -1353,25 +1353,25 @@ static void swi_mangoh_bridge_json_destroyData(swi_mangoh_bridge_json_data_t** j
     }
 }
 
-static int swi_mangoh_bridge_json_destroyArray(swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_destroyArray(mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonData && *jsonData);
-    LE_ASSERT((*jsonData)->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY);
+    LE_ASSERT((*jsonData)->type == MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY);
 
     LE_DEBUG("ARRAY BEGIN");
     le_sls_Link_t* link = le_sls_Pop(&(*jsonData)->data.arrayVal);
     while (link)
     {
-        swi_mangoh_bridge_json_array_item_t* jsonItemData = CONTAINER_OF(link, swi_mangoh_bridge_json_array_item_t, link);
+        mangoh_bridge_json_array_item_t* jsonItemData = CONTAINER_OF(link, mangoh_bridge_json_array_item_t, link);
         LE_ASSERT(jsonItemData && jsonItemData->item);
 
         LE_DEBUG("ITEM");
-        res = swi_mangoh_bridge_json_destroy(&jsonItemData->item);
+        res = mangoh_bridge_json_destroy(&jsonItemData->item);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", res);
             goto cleanup;
         }
 
@@ -1391,18 +1391,18 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_destroyObject(swi_mangoh_bridge_json_data_t** jsonData)
+static int mangoh_bridge_json_destroyObject(mangoh_bridge_json_data_t** jsonData)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonData && *jsonData);
-    LE_ASSERT((*jsonData)->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT);
+    LE_ASSERT((*jsonData)->type == MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT);
 
     LE_DEBUG("ARRAY BEGIN");
     le_sls_Link_t* link = le_sls_Pop(&(*jsonData)->data.objVal);
     while (link)
     {
-        swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = CONTAINER_OF(link, swi_mangoh_bridge_json_array_obj_item_t, link);
+        mangoh_bridge_json_array_obj_item_t* jsonItemData = CONTAINER_OF(link, mangoh_bridge_json_array_obj_item_t, link);
         LE_ASSERT(jsonItemData && jsonItemData->item);
 
         LE_DEBUG("ITEM");
@@ -1410,10 +1410,10 @@ static int swi_mangoh_bridge_json_destroyObject(swi_mangoh_bridge_json_data_t** 
         free(jsonItemData->attribute);
         jsonItemData->attribute = NULL;
 
-        res = swi_mangoh_bridge_json_destroy(&jsonItemData->item);
+        res = mangoh_bridge_json_destroy(&jsonItemData->item);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", res);
             goto cleanup;
         }
 
@@ -1433,7 +1433,7 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_json_getAttribute(const swi_mangoh_bridge_json_data_t* jsonData, const char* attribute, swi_mangoh_bridge_json_data_t** jsonSearchObj)
+static int mangoh_bridge_json_getAttribute(const mangoh_bridge_json_data_t* jsonData, const char* attribute, mangoh_bridge_json_data_t** jsonSearchObj)
 {
     int32_t res = LE_OK;
 
@@ -1441,15 +1441,15 @@ static int swi_mangoh_bridge_json_getAttribute(const swi_mangoh_bridge_json_data
     LE_ASSERT(attribute);
     LE_ASSERT(jsonSearchObj);
 
-    if (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY)
+    if (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY)
     {
         const le_sls_Link_t* link = le_sls_Peek(&jsonData->data.arrayVal);
         if (link)
         {
-            const swi_mangoh_bridge_json_array_item_t* jsonItemData = CONTAINER_OF(link, swi_mangoh_bridge_json_array_item_t, link);
-            const swi_mangoh_bridge_json_data_t* jsonObjData = (const swi_mangoh_bridge_json_data_t*)(jsonItemData->item);
+            const mangoh_bridge_json_array_item_t* jsonItemData = CONTAINER_OF(link, mangoh_bridge_json_array_item_t, link);
+            const mangoh_bridge_json_data_t* jsonObjData = (const mangoh_bridge_json_data_t*)(jsonItemData->item);
 
-            if (jsonObjData->type != SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT)
+            if (jsonObjData->type != MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT)
             {
                 LE_ERROR("invalid JSON command");
                 res = LE_BAD_PARAMETER;
@@ -1459,7 +1459,7 @@ static int swi_mangoh_bridge_json_getAttribute(const swi_mangoh_bridge_json_data
             const le_sls_Link_t* objLink = le_sls_Peek(&jsonObjData->data.objVal);
             while (objLink)
             {
-                const swi_mangoh_bridge_json_array_obj_item_t* jsonObjItemData = CONTAINER_OF(objLink, swi_mangoh_bridge_json_array_obj_item_t, link);
+                const mangoh_bridge_json_array_obj_item_t* jsonObjItemData = CONTAINER_OF(objLink, mangoh_bridge_json_array_obj_item_t, link);
 
                 LE_DEBUG("key('%s')", jsonObjItemData->attribute);
                 if (!strcmp(jsonObjItemData->attribute, attribute))
@@ -1472,12 +1472,12 @@ static int swi_mangoh_bridge_json_getAttribute(const swi_mangoh_bridge_json_data
             }
         }
     }
-    else if (jsonData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT)
+    else if (jsonData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT)
     {
         const le_sls_Link_t* link = le_sls_Peek(&jsonData->data.objVal);
         while (link)
         {
-            const swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = CONTAINER_OF(link, swi_mangoh_bridge_json_array_obj_item_t, link);
+            const mangoh_bridge_json_array_obj_item_t* jsonItemData = CONTAINER_OF(link, mangoh_bridge_json_array_obj_item_t, link);
 
             LE_DEBUG("key('%s')", jsonItemData->attribute);
             if (!strcmp(jsonItemData->attribute, attribute))
@@ -1500,18 +1500,18 @@ cleanup:
       return res;
 }
 
-int swi_mangoh_bridge_json_getKey(const swi_mangoh_bridge_json_data_t* jsonData, char** key)
+int mangoh_bridge_json_getKey(const mangoh_bridge_json_data_t* jsonData, char** key)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonData);
     LE_ASSERT(key);
 
-    swi_mangoh_bridge_json_data_t* jsonSearchData = NULL;
-    res = swi_mangoh_bridge_json_getAttribute(jsonData, SWI_MANGOH_BRIDGE_JSON_MESSAGE_KEY, &jsonSearchData);
+    mangoh_bridge_json_data_t* jsonSearchData = NULL;
+    res = mangoh_bridge_json_getAttribute(jsonData, MANGOH_BRIDGE_JSON_MESSAGE_KEY, &jsonSearchData);
     if (res != LE_OK)
     {
-        LE_ERROR("swi_mangoh_bridge_json_getAttribute() failed(%d)", res);
+        LE_ERROR("mangoh_bridge_json_getAttribute() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1522,18 +1522,18 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_getCommand(const swi_mangoh_bridge_json_data_t* jsonData, char** cmd)
+int mangoh_bridge_json_getCommand(const mangoh_bridge_json_data_t* jsonData, char** cmd)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonData);
     LE_ASSERT(cmd);
 
-    swi_mangoh_bridge_json_data_t* jsonSearchData = NULL;
-    res = swi_mangoh_bridge_json_getAttribute(jsonData, SWI_MANGOH_BRIDGE_JSON_MESSAGE_REQUEST, &jsonSearchData);
+    mangoh_bridge_json_data_t* jsonSearchData = NULL;
+    res = mangoh_bridge_json_getAttribute(jsonData, MANGOH_BRIDGE_JSON_MESSAGE_REQUEST, &jsonSearchData);
     if (res != LE_OK)
     {
-        LE_ERROR("swi_mangoh_bridge_json_getAttribute() failed(%d)", res);
+        LE_ERROR("mangoh_bridge_json_getAttribute() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1544,17 +1544,17 @@ cleanup:
       return res;
 }
 
-int swi_mangoh_bridge_json_getValue(const swi_mangoh_bridge_json_data_t* jsonData, swi_mangoh_bridge_json_data_t** value)
+int mangoh_bridge_json_getValue(const mangoh_bridge_json_data_t* jsonData, mangoh_bridge_json_data_t** value)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonData);
     LE_ASSERT(value);
 
-    res = swi_mangoh_bridge_json_getAttribute(jsonData, SWI_MANGOH_BRIDGE_JSON_MESSAGE_VALUE, value);
+    res = mangoh_bridge_json_getAttribute(jsonData, MANGOH_BRIDGE_JSON_MESSAGE_VALUE, value);
     if (res != LE_OK)
     {
-        LE_ERROR("swi_mangoh_bridge_json_getAttribute() failed(%d)", res);
+        LE_ERROR("mangoh_bridge_json_getAttribute() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1562,17 +1562,17 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_getData(const swi_mangoh_bridge_json_data_t* jsonData, swi_mangoh_bridge_json_data_t** data)
+int mangoh_bridge_json_getData(const mangoh_bridge_json_data_t* jsonData, mangoh_bridge_json_data_t** data)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonData);
     LE_ASSERT(data);
 
-    res = swi_mangoh_bridge_json_getAttribute(jsonData, SWI_MANGOH_BRIDGE_JSON_MESSAGE_DATA, data);
+    res = mangoh_bridge_json_getAttribute(jsonData, MANGOH_BRIDGE_JSON_MESSAGE_DATA, data);
     if (res != LE_OK)
     {
-        LE_ERROR("swi_mangoh_bridge_json_getAttribute() failed(%d)", res);
+        LE_ERROR("mangoh_bridge_json_getAttribute() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1580,14 +1580,14 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_setRequestCommand(swi_mangoh_bridge_json_data_t* jsonRspData, const char* cmd)
+int mangoh_bridge_json_setRequestCommand(mangoh_bridge_json_data_t* jsonRspData, const char* cmd)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonRspData);
     LE_ASSERT(cmd);
 
-    swi_mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1595,7 +1595,7 @@ int swi_mangoh_bridge_json_setRequestCommand(swi_mangoh_bridge_json_data_t* json
         goto cleanup;
     }
 
-    jsonData->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
+    jsonData->type = MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
     jsonData->len = strlen(cmd) + 1;
     jsonData->data.strVal = malloc(jsonData->len);
     if (!jsonData->data.strVal)
@@ -1606,7 +1606,7 @@ int swi_mangoh_bridge_json_setRequestCommand(swi_mangoh_bridge_json_data_t* json
     }
     strcpy(jsonData->data.strVal, cmd);
 
-    swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(swi_mangoh_bridge_json_array_obj_item_t));
+    mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(mangoh_bridge_json_array_obj_item_t));
     if (!jsonItemData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1614,14 +1614,14 @@ int swi_mangoh_bridge_json_setRequestCommand(swi_mangoh_bridge_json_data_t* json
         goto cleanup;
     }
 
-    jsonItemData->attribute = malloc(strlen(SWI_MANGOH_BRIDGE_JSON_MESSAGE_REQUEST) + 1);
+    jsonItemData->attribute = malloc(strlen(MANGOH_BRIDGE_JSON_MESSAGE_REQUEST) + 1);
     if (!jsonItemData->attribute)
     {
         LE_ERROR("ERROR malloc() failed");
         res = LE_NO_MEMORY;
         goto cleanup;
     }
-    strcpy(jsonItemData->attribute, SWI_MANGOH_BRIDGE_JSON_MESSAGE_REQUEST);
+    strcpy(jsonItemData->attribute, MANGOH_BRIDGE_JSON_MESSAGE_REQUEST);
 
     jsonItemData->item = jsonData;
     jsonItemData->link = LE_SLS_LINK_INIT;
@@ -1631,14 +1631,14 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_setData(swi_mangoh_bridge_json_data_t* jsonRspData, const uint8_t* data, uint32_t len)
+int mangoh_bridge_json_setData(mangoh_bridge_json_data_t* jsonRspData, const uint8_t* data, uint32_t len)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonRspData);
     LE_ASSERT(data);
 
-    swi_mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1646,7 +1646,7 @@ int swi_mangoh_bridge_json_setData(swi_mangoh_bridge_json_data_t* jsonRspData, c
         goto cleanup;
     }
 
-    jsonData->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
+    jsonData->type = MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
     jsonData->len = len;
     jsonData->data.strVal = calloc(1, jsonData->len);
     if (!jsonData->data.strVal)
@@ -1657,7 +1657,7 @@ int swi_mangoh_bridge_json_setData(swi_mangoh_bridge_json_data_t* jsonRspData, c
     }
     strcpy(jsonData->data.strVal, (const char*)data);
 
-    swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(swi_mangoh_bridge_json_array_obj_item_t));
+    mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(mangoh_bridge_json_array_obj_item_t));
     if (!jsonItemData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1665,14 +1665,14 @@ int swi_mangoh_bridge_json_setData(swi_mangoh_bridge_json_data_t* jsonRspData, c
         goto cleanup;
     }
 
-    jsonItemData->attribute = malloc(strlen(SWI_MANGOH_BRIDGE_JSON_MESSAGE_DATA) + 1);
+    jsonItemData->attribute = malloc(strlen(MANGOH_BRIDGE_JSON_MESSAGE_DATA) + 1);
     if (!jsonItemData->attribute)
     {
         LE_ERROR("ERROR malloc() failed");
         res = LE_NO_MEMORY;
         goto cleanup;
     }
-    strcpy(jsonItemData->attribute, SWI_MANGOH_BRIDGE_JSON_MESSAGE_DATA);
+    strcpy(jsonItemData->attribute, MANGOH_BRIDGE_JSON_MESSAGE_DATA);
 
     jsonItemData->item = jsonData;
     jsonItemData->link = LE_SLS_LINK_INIT;
@@ -1682,7 +1682,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_copyObject(swi_mangoh_bridge_json_data_t** dest, const swi_mangoh_bridge_json_data_t* src)
+int mangoh_bridge_json_copyObject(mangoh_bridge_json_data_t** dest, const mangoh_bridge_json_data_t* src)
 {
     uint8_t* buff = NULL;
     uint32_t len = 0;
@@ -1691,17 +1691,17 @@ int swi_mangoh_bridge_json_copyObject(swi_mangoh_bridge_json_data_t** dest, cons
     LE_ASSERT(src);
     LE_ASSERT(dest && !dest);
 
-    res = swi_mangoh_bridge_json_write(src, &buff, &len);
+    res = mangoh_bridge_json_write(src, &buff, &len);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_read(buff, &len, dest);
+    res = mangoh_bridge_json_read(buff, &len, dest);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_read() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_read() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1710,13 +1710,13 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_createObject(swi_mangoh_bridge_json_data_t** jsonRspData)
+int mangoh_bridge_json_createObject(mangoh_bridge_json_data_t** jsonRspData)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonRspData && (*jsonRspData == NULL));
 
-    *jsonRspData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonRspData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonRspData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1726,19 +1726,19 @@ int swi_mangoh_bridge_json_createObject(swi_mangoh_bridge_json_data_t** jsonRspD
 
     (*jsonRspData)->data.objVal = LE_SLS_LIST_INIT;
     (*jsonRspData)->len = sizeof((*jsonRspData)->data.objVal);
-    (*jsonRspData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT;
+    (*jsonRspData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT;
 
 cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_createArray(swi_mangoh_bridge_json_data_t** jsonArrayData)
+int mangoh_bridge_json_createArray(mangoh_bridge_json_data_t** jsonArrayData)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonArrayData && (*jsonArrayData == NULL));
 
-    *jsonArrayData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    *jsonArrayData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!*jsonArrayData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1747,21 +1747,21 @@ int swi_mangoh_bridge_json_createArray(swi_mangoh_bridge_json_data_t** jsonArray
     }
 
     (*jsonArrayData)->len = sizeof((*jsonArrayData)->data.arrayVal);
-    (*jsonArrayData)->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY;
+    (*jsonArrayData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY;
     (*jsonArrayData)->data.arrayVal = LE_SLS_LIST_INIT;
 
 cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_setResponseCommand(swi_mangoh_bridge_json_data_t* jsonRspData, const char* cmd)
+int mangoh_bridge_json_setResponseCommand(mangoh_bridge_json_data_t* jsonRspData, const char* cmd)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonRspData);
     LE_ASSERT(cmd);
 
-    swi_mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1769,7 +1769,7 @@ int swi_mangoh_bridge_json_setResponseCommand(swi_mangoh_bridge_json_data_t* jso
         goto cleanup;
     }
 
-    jsonData->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
+    jsonData->type = MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
     jsonData->len = strlen(cmd) + 1;
     jsonData->data.strVal = calloc(1, jsonData->len);
     if (!jsonData->data.strVal)
@@ -1780,7 +1780,7 @@ int swi_mangoh_bridge_json_setResponseCommand(swi_mangoh_bridge_json_data_t* jso
     }
     strcpy(jsonData->data.strVal, cmd);
 
-    swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(swi_mangoh_bridge_json_array_obj_item_t));
+    mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(mangoh_bridge_json_array_obj_item_t));
     if (!jsonItemData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1788,14 +1788,14 @@ int swi_mangoh_bridge_json_setResponseCommand(swi_mangoh_bridge_json_data_t* jso
         goto cleanup;
     }
 
-    jsonItemData->attribute = malloc(strlen(SWI_MANGOH_BRIDGE_JSON_MESSAGE_RESPONSE) + 1);
+    jsonItemData->attribute = malloc(strlen(MANGOH_BRIDGE_JSON_MESSAGE_RESPONSE) + 1);
     if (!jsonItemData->attribute)
     {
         LE_ERROR("ERROR malloc() failed");
         res = LE_NO_MEMORY;
         goto cleanup;
     }
-    strcpy(jsonItemData->attribute, SWI_MANGOH_BRIDGE_JSON_MESSAGE_RESPONSE);
+    strcpy(jsonItemData->attribute, MANGOH_BRIDGE_JSON_MESSAGE_RESPONSE);
 
     jsonItemData->item = jsonData;
     jsonItemData->link = LE_SLS_LINK_INIT;
@@ -1805,14 +1805,14 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_setKey(swi_mangoh_bridge_json_data_t* jsonRspData, const char* key)
+int mangoh_bridge_json_setKey(mangoh_bridge_json_data_t* jsonRspData, const char* key)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonRspData);
     LE_ASSERT(key);
 
-    swi_mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(swi_mangoh_bridge_json_data_t));
+    mangoh_bridge_json_data_t* jsonData = calloc(1, sizeof(mangoh_bridge_json_data_t));
     if (!jsonData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1820,7 +1820,7 @@ int swi_mangoh_bridge_json_setKey(swi_mangoh_bridge_json_data_t* jsonRspData, co
         goto cleanup;
     }
 
-    jsonData->type = SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
+    jsonData->type = MANGOH_BRIDGE_JSON_DATA_TYPE_STRING;
     jsonData->len = strlen(key) + 1;
     jsonData->data.strVal = calloc(1, jsonData->len);
     if (!jsonData->data.strVal)
@@ -1831,7 +1831,7 @@ int swi_mangoh_bridge_json_setKey(swi_mangoh_bridge_json_data_t* jsonRspData, co
     }
     strcpy(jsonData->data.strVal, key);
 
-    swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(swi_mangoh_bridge_json_array_obj_item_t));
+    mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(mangoh_bridge_json_array_obj_item_t));
     if (!jsonItemData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1839,14 +1839,14 @@ int swi_mangoh_bridge_json_setKey(swi_mangoh_bridge_json_data_t* jsonRspData, co
         goto cleanup;
     }
 
-    jsonItemData->attribute = malloc(strlen(SWI_MANGOH_BRIDGE_JSON_MESSAGE_KEY) + 1);
+    jsonItemData->attribute = malloc(strlen(MANGOH_BRIDGE_JSON_MESSAGE_KEY) + 1);
     if (!jsonItemData->attribute)
     {
         LE_ERROR("ERROR malloc() failed");
         res = LE_NO_MEMORY;
         goto cleanup;
     }
-    strcpy(jsonItemData->attribute, SWI_MANGOH_BRIDGE_JSON_MESSAGE_KEY);
+    strcpy(jsonItemData->attribute, MANGOH_BRIDGE_JSON_MESSAGE_KEY);
 
     jsonItemData->item = jsonData;
     jsonItemData->link = LE_SLS_LINK_INIT;
@@ -1856,14 +1856,14 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_setValue(swi_mangoh_bridge_json_data_t* jsonRspData, const swi_mangoh_bridge_json_data_t* value)
+int mangoh_bridge_json_setValue(mangoh_bridge_json_data_t* jsonRspData, const mangoh_bridge_json_data_t* value)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(jsonRspData);
     LE_ASSERT(value);
 
-    swi_mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(swi_mangoh_bridge_json_array_obj_item_t));
+    mangoh_bridge_json_array_obj_item_t* jsonItemData = calloc(1, sizeof(mangoh_bridge_json_array_obj_item_t));
     if (!jsonItemData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1871,16 +1871,16 @@ int swi_mangoh_bridge_json_setValue(swi_mangoh_bridge_json_data_t* jsonRspData, 
         goto cleanup;
     }
 
-    jsonItemData->attribute = malloc(strlen(SWI_MANGOH_BRIDGE_JSON_MESSAGE_VALUE) + 1);
+    jsonItemData->attribute = malloc(strlen(MANGOH_BRIDGE_JSON_MESSAGE_VALUE) + 1);
     if (!jsonItemData->attribute)
     {
         LE_ERROR("ERROR malloc() failed");
         res = LE_NO_MEMORY;
         goto cleanup;
     }
-    strcpy(jsonItemData->attribute, SWI_MANGOH_BRIDGE_JSON_MESSAGE_VALUE);
+    strcpy(jsonItemData->attribute, MANGOH_BRIDGE_JSON_MESSAGE_VALUE);
 
-    jsonItemData->item = (swi_mangoh_bridge_json_data_t*)value;
+    jsonItemData->item = (mangoh_bridge_json_data_t*)value;
     jsonItemData->link = LE_SLS_LINK_INIT;
     le_sls_Queue(&jsonRspData->data.objVal, &jsonItemData->link);
 
@@ -1888,11 +1888,11 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_addObject(swi_mangoh_bridge_json_data_t* jsonRspData, const swi_mangoh_bridge_json_data_t* jsonItemData)
+int mangoh_bridge_json_addObject(mangoh_bridge_json_data_t* jsonRspData, const mangoh_bridge_json_data_t* jsonItemData)
 {
     int32_t res = LE_OK;
 
-    swi_mangoh_bridge_json_array_item_t* jsonArrayItem = calloc(1, sizeof(swi_mangoh_bridge_json_array_item_t));
+    mangoh_bridge_json_array_item_t* jsonArrayItem = calloc(1, sizeof(mangoh_bridge_json_array_item_t));
     if (!jsonItemData)
     {
         LE_ERROR("ERROR calloc() failed");
@@ -1900,11 +1900,11 @@ int swi_mangoh_bridge_json_addObject(swi_mangoh_bridge_json_data_t* jsonRspData,
         goto cleanup;
     }
 
-    swi_mangoh_bridge_json_data_t* jsonDataCopy = NULL;
-    res = swi_mangoh_bridge_json_copyObject(&jsonDataCopy, jsonItemData);
+    mangoh_bridge_json_data_t* jsonDataCopy = NULL;
+    res = mangoh_bridge_json_copyObject(&jsonDataCopy, jsonItemData);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_copyObject() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_copyObject() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1916,7 +1916,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_read(const uint8_t* const buff, uint32_t* len, swi_mangoh_bridge_json_data_t** jsonData)
+int mangoh_bridge_json_read(const uint8_t* const buff, uint32_t* len, mangoh_bridge_json_data_t** jsonData)
 {
     int res = LE_OK;
 
@@ -1925,10 +1925,10 @@ int swi_mangoh_bridge_json_read(const uint8_t* const buff, uint32_t* len, swi_ma
     LE_ASSERT(jsonData && !*jsonData);
 
     const uint8_t* reversePtr = &buff[*len - 1];
-    res = swi_mangoh_bridge_json_skipWhitespace(&reversePtr, len, false);
+    res = mangoh_bridge_json_skipWhitespace(&reversePtr, len, false);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_skipWhitespace() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_skipWhitespace() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1940,27 +1940,27 @@ int swi_mangoh_bridge_json_read(const uint8_t* const buff, uint32_t* len, swi_ma
     }
 
     const uint8_t* ptr = (uint8_t*)buff;
-    res = swi_mangoh_bridge_json_readData(&ptr, len, jsonData);
+    res = mangoh_bridge_json_readData(&ptr, len, jsonData);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_readData() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_readData() failed(%d)", res);
         goto cleanup;
     }
 
 cleanup:
     if (res && *jsonData)
     {
-        int32_t err = swi_mangoh_bridge_json_destroy(jsonData);
+        int32_t err = mangoh_bridge_json_destroy(jsonData);
         if (err != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
         }
     }
 
     return res;
 }
 
-int swi_mangoh_bridge_json_write(const swi_mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* len)
+int mangoh_bridge_json_write(const mangoh_bridge_json_data_t* jsonData, uint8_t** buff, uint32_t* len)
 {
     int res = LE_OK;
 
@@ -1968,8 +1968,8 @@ int swi_mangoh_bridge_json_write(const swi_mangoh_bridge_json_data_t* jsonData, 
     LE_ASSERT(buff);
     LE_ASSERT(len);
 
-    uint32_t allocLen = SWI_MANGOH_BRIDGE_JSON_BUFFER_ALLOC_LEN;
-    *buff = malloc(SWI_MANGOH_BRIDGE_JSON_BUFFER_ALLOC_LEN);
+    uint32_t allocLen = MANGOH_BRIDGE_JSON_BUFFER_ALLOC_LEN;
+    *buff = malloc(MANGOH_BRIDGE_JSON_BUFFER_ALLOC_LEN);
     if (!*buff)
     {
         LE_ERROR("malloc() failed");
@@ -1978,10 +1978,10 @@ int swi_mangoh_bridge_json_write(const swi_mangoh_bridge_json_data_t* jsonData, 
     }
 
     uint8_t* ptr = *buff;
-    res = swi_mangoh_bridge_json_writeData(jsonData, buff, &allocLen, &ptr, len);
+    res = mangoh_bridge_json_writeData(jsonData, buff, &allocLen, &ptr, len);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_writeData() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_writeData() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1989,7 +1989,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_json_destroy(swi_mangoh_bridge_json_data_t** jsonData)
+int mangoh_bridge_json_destroy(mangoh_bridge_json_data_t** jsonData)
 {
     int res = LE_OK;
 
@@ -1997,31 +1997,31 @@ int swi_mangoh_bridge_json_destroy(swi_mangoh_bridge_json_data_t** jsonData)
 
     switch ((*jsonData)->type)
     {
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_NULL:
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN:
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_INT:
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT:
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_NULL:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_BOOLEAN:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_INT:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_FLOAT:
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_UNICODE:
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_STRING:
-        swi_mangoh_bridge_json_destroyData(jsonData);
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_STRING:
+        mangoh_bridge_json_destroyData(jsonData);
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY:
-        res = swi_mangoh_bridge_json_destroyArray(jsonData);
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_ARRAY:
+        res = mangoh_bridge_json_destroyArray(jsonData);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroyArray() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_destroyArray() failed(%d)", res);
             goto cleanup;
         }
         break;
 
-    case SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT:
-        res = swi_mangoh_bridge_json_destroyObject(jsonData);
+    case MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT:
+        res = mangoh_bridge_json_destroyObject(jsonData);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroyObject() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_destroyObject() failed(%d)", res);
             goto cleanup;
         }
         break;

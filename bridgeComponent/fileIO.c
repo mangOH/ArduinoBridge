@@ -6,19 +6,19 @@
 #include "bridge.h"
 #include "fileIO.h"
 
-static int swi_mangoh_bridge_fileio_getMode(unsigned char, int*);
-static int swi_mangoh_bridge_fileio_open(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_fileio_write(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_fileio_read(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_fileio_isDir(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_fileio_seek(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_fileio_position(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_fileio_size(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_fileio_close(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_getMode(unsigned char, int*);
+static int mangoh_bridge_fileio_open(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_write(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_read(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_isDir(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_seek(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_position(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_size(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_fileio_close(void*, const unsigned char*, uint32_t);
 
-static int swi_mangoh_bridge_fileio_reset(void*);
+static int mangoh_bridge_fileio_reset(void*);
 
-static int swi_mangoh_bridge_fileio_getMode(unsigned char mode, int* retMode)
+static int mangoh_bridge_fileio_getMode(unsigned char mode, int* retMode)
 {
     *retMode =  (mode == 'r') ? O_RDONLY | O_EXCL | O_NONBLOCK:
                  (mode == 'w') ? O_WRONLY | O_CREAT | O_EXCL | O_NONBLOCK:
@@ -27,26 +27,26 @@ static int swi_mangoh_bridge_fileio_getMode(unsigned char mode, int* retMode)
     return *retMode ? LE_OK:LE_BAD_PARAMETER;
 }
 
-static int swi_mangoh_bridge_fileio_open(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_open(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_open_req_t* const req = (swi_mangoh_bridge_fileio_open_req_t*)data;
+    const mangoh_bridge_fileio_open_req_t* const req = (mangoh_bridge_fileio_open_req_t*)data;
     uint32_t filenameLen = size - sizeof(req->mode);
 
-    char filename[SWI_MANGOH_BRIDGE_FILEIO_MAX_FILENAME_LEN] = {0};
+    char filename[MANGOH_BRIDGE_FILEIO_MAX_FILENAME_LEN] = {0};
     memcpy(filename, req->filename, filenameLen);
     LE_DEBUG("---> OPEN '%s' - '%c'", filename, req->mode);
 
     int32_t mode = 0;
-    res = swi_mangoh_bridge_fileio_getMode(req->mode, &mode);
+    res = mangoh_bridge_fileio_getMode(req->mode, &mode);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_fileio_getMode() failed(%d/%d)", res, errno);
+        LE_ERROR("ERROR mangoh_bridge_fileio_getMode() failed(%d/%d)", res, errno);
         goto cleanup;
     }
 
@@ -63,10 +63,10 @@ static int swi_mangoh_bridge_fileio_open(void* param, const unsigned char* data,
             {
                 LE_ERROR("ERROR open() failed(%d/%d)", fileio->fdList[fileio->nextId], errno);
 
-                res = swi_mangoh_bridge_sendNack(fileio->bridge);
+                res = mangoh_bridge_sendNack(fileio->bridge);
                 if (res != LE_OK)
                 {
-                    LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+                    LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
                     goto cleanup;
                 }
 
@@ -78,10 +78,10 @@ static int swi_mangoh_bridge_fileio_open(void* param, const unsigned char* data,
         {
             LE_ERROR("ERROR open() failed(%d/%d)", fileio->fdList[fileio->nextId], errno);
 
-            res = swi_mangoh_bridge_sendNack(fileio->bridge);
+            res = mangoh_bridge_sendNack(fileio->bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
                 goto cleanup;
             }
 
@@ -92,35 +92,35 @@ static int swi_mangoh_bridge_fileio_open(void* param, const unsigned char* data,
 
     LE_DEBUG("file('%s') fd[%u](%d)", filename, fileio->nextId, fileio->fdList[fileio->nextId]);
 
-    swi_mangoh_bridge_fileio_open_rsp_t* const rsp = (swi_mangoh_bridge_fileio_open_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_open_rsp_t* const rsp = (mangoh_bridge_fileio_open_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
     rsp->result = res;
     rsp->fd = fileio->nextId;
     LE_DEBUG("open(%d), result(%d)", rsp->fd, rsp->result);
 
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(swi_mangoh_bridge_fileio_open_rsp_t));
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_open_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
-    fileio->nextId = (fileio->nextId + 1) % SWI_MANGOH_BRIDGE_FILEIO_LIST_SIZE;
+    fileio->nextId = (fileio->nextId + 1) % MANGOH_BRIDGE_FILEIO_LIST_SIZE;
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_write(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_write(void* param, const unsigned char* data, uint32_t size)
 {
-    const swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    const mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_write_req_t* const req = (swi_mangoh_bridge_fileio_write_req_t*)data;
+    const mangoh_bridge_fileio_write_req_t* const req = (mangoh_bridge_fileio_write_req_t*)data;
     const uint32_t numBytes = size - sizeof(req->fd);
-    swi_mangoh_bridge_packet_dumpBuffer(req->buffer, numBytes);
+    mangoh_bridge_packet_dumpBuffer(req->buffer, numBytes);
 
     LE_DEBUG("---> WRITE fd[%u](%d) size(%u)", req->fd, fileio->fdList[req->fd], numBytes);
     ssize_t bytesWrite = write(fileio->fdList[req->fd], req->buffer, numBytes);
@@ -128,10 +128,10 @@ static int swi_mangoh_bridge_fileio_write(void* param, const unsigned char* data
     {
         LE_ERROR("ERROR write() fd[%u](%d) failed(%d/%d)",  req->fd, fileio->fdList[req->fd], bytesWrite, errno);
 
-        res = swi_mangoh_bridge_sendNack(fileio->bridge);
+        res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -140,12 +140,12 @@ static int swi_mangoh_bridge_fileio_write(void* param, const unsigned char* data
     }
 
     LE_DEBUG("fd[%u](%d), result(%d/%d)", req->fd, fileio->fdList[req->fd], bytesWrite, res);
-    swi_mangoh_bridge_fileio_write_rsp_t* const rsp = (swi_mangoh_bridge_fileio_write_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_write_rsp_t* const rsp = (mangoh_bridge_fileio_write_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
     rsp->result = res;
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(swi_mangoh_bridge_fileio_write_rsp_t));
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_write_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -153,21 +153,21 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_isDir(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_isDir(void* param, const unsigned char* data, uint32_t size)
 {
-    const swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    const mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_is_dir_req_t* const req = (swi_mangoh_bridge_fileio_is_dir_req_t*)data;
+    const mangoh_bridge_fileio_is_dir_req_t* const req = (mangoh_bridge_fileio_is_dir_req_t*)data;
 
-    char filename[SWI_MANGOH_BRIDGE_FILEIO_MAX_FILENAME_LEN] = {0};
+    char filename[MANGOH_BRIDGE_FILEIO_MAX_FILENAME_LEN] = {0};
     memcpy(filename, req->filename, size);
     LE_DEBUG("---> IS DIRECTORY '%s'", filename);
 
-    swi_mangoh_bridge_fileio_is_dir_rsp_t* const rsp = (swi_mangoh_bridge_fileio_is_dir_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_is_dir_rsp_t* const rsp = (mangoh_bridge_fileio_is_dir_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
 
     DIR* dir = opendir(filename);
     if (dir)
@@ -179,10 +179,10 @@ static int swi_mangoh_bridge_fileio_isDir(void* param, const unsigned char* data
         {
             LE_ERROR("ERROR closedir() failed(%d/%d)", res, errno);
 
-            res = swi_mangoh_bridge_sendNack(fileio->bridge);
+            res = mangoh_bridge_sendNack(fileio->bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
                 goto cleanup;
             }
 
@@ -196,10 +196,10 @@ static int swi_mangoh_bridge_fileio_isDir(void* param, const unsigned char* data
     }
 
     LE_DEBUG("result(%u)", rsp->result);
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(swi_mangoh_bridge_fileio_is_dir_rsp_t));
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_is_dir_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -207,15 +207,15 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_seek(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_seek(void* param, const unsigned char* data, uint32_t size)
 {
-    const swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    const mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_seek_req_t* const req = (swi_mangoh_bridge_fileio_seek_req_t*)data;
+    const mangoh_bridge_fileio_seek_req_t* const req = (mangoh_bridge_fileio_seek_req_t*)data;
 
     uint32_t pos = 0;
     memcpy(&pos, &req->pos, sizeof(pos));
@@ -227,10 +227,10 @@ static int swi_mangoh_bridge_fileio_seek(void* param, const unsigned char* data,
     {
         LE_ERROR("ERROR lseek() fd[%u](%d) failed(%d/%d)", req->fd, fileio->fdList[req->fd], res, errno);
 
-        res = swi_mangoh_bridge_sendNack(fileio->bridge);
+        res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -239,13 +239,13 @@ static int swi_mangoh_bridge_fileio_seek(void* param, const unsigned char* data,
     }
 
     LE_DEBUG("fd[%u](%d) result(%u)", req->fd, fileio->fdList[req->fd], res);
-    swi_mangoh_bridge_fileio_seek_rsp_t* const rsp = (swi_mangoh_bridge_fileio_seek_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_seek_rsp_t* const rsp = (mangoh_bridge_fileio_seek_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
     rsp->result = LE_OK;
 
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(swi_mangoh_bridge_fileio_seek_rsp_t));
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_seek_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -253,15 +253,15 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_position(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_position(void* param, const unsigned char* data, uint32_t size)
 {
-    const swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    const mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_position_req_t* const req = (swi_mangoh_bridge_fileio_position_req_t*)data;
+    const mangoh_bridge_fileio_position_req_t* const req = (mangoh_bridge_fileio_position_req_t*)data;
     LE_DEBUG("---> POSITION fd[%u](%d)", req->fd, fileio->fdList[req->fd]);
 
     const int32_t pos = lseek(fileio->fdList[req->fd], 0, SEEK_CUR);
@@ -269,10 +269,10 @@ static int swi_mangoh_bridge_fileio_position(void* param, const unsigned char* d
     {
         LE_ERROR("ERROR lseek() fd(%d) failed(%d/%d)", req->fd, res, errno);
 
-        res = swi_mangoh_bridge_sendNack(fileio->bridge);
+        res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -281,14 +281,14 @@ static int swi_mangoh_bridge_fileio_position(void* param, const unsigned char* d
     }
 
     LE_DEBUG("fd[%u](%d) result(%u)", req->fd, fileio->fdList[req->fd], pos);
-    swi_mangoh_bridge_fileio_pos_rsp_t* const rsp = (swi_mangoh_bridge_fileio_pos_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_pos_rsp_t* const rsp = (mangoh_bridge_fileio_pos_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
     rsp->result = 0;
     rsp->pos = htonl(pos);
 
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(swi_mangoh_bridge_fileio_pos_rsp_t));
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_pos_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -296,15 +296,15 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_size(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_size(void* param, const unsigned char* data, uint32_t size)
 {
-    const swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    const mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_size_req_t* const req = (swi_mangoh_bridge_fileio_size_req_t*)data;
+    const mangoh_bridge_fileio_size_req_t* const req = (mangoh_bridge_fileio_size_req_t*)data;
     LE_DEBUG("---> SIZE fd[%u](%d)", req->fd, fileio->fdList[req->fd]);
 
     res = lseek(fileio->fdList[req->fd], 0, SEEK_CUR);
@@ -312,10 +312,10 @@ static int swi_mangoh_bridge_fileio_size(void* param, const unsigned char* data,
     {
         LE_ERROR("ERROR lseek() fd[%u](%d) failed(%d/%d)", req->fd, fileio->fdList[req->fd], res, errno);
 
-        res = swi_mangoh_bridge_sendNack(fileio->bridge);
+        res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -329,10 +329,10 @@ static int swi_mangoh_bridge_fileio_size(void* param, const unsigned char* data,
     {
         LE_ERROR("ERROR fstat() fd[%u](%d) failed(%d/%d)", req->fd, fileio->fdList[req->fd], res, errno);
 
-        res = swi_mangoh_bridge_sendNack(fileio->bridge);
+        res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -343,14 +343,14 @@ static int swi_mangoh_bridge_fileio_size(void* param, const unsigned char* data,
     const uint32_t fileSize = buf.st_size;
     LE_INFO("fd[%u](%d) size(%u)", req->fd, fileio->fdList[req->fd], fileSize);
 
-    swi_mangoh_bridge_fileio_size_rsp_t* const rsp = (swi_mangoh_bridge_fileio_size_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_size_rsp_t* const rsp = (mangoh_bridge_fileio_size_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
 
     rsp->result = LE_OK;
     rsp->size = htonl(fileSize);
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(swi_mangoh_bridge_fileio_size_rsp_t));
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_size_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -358,27 +358,27 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_read(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_read(void* param, const unsigned char* data, uint32_t size)
 {
-    const swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    const mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_read_req_t* const req = (swi_mangoh_bridge_fileio_read_req_t*)data;
+    const mangoh_bridge_fileio_read_req_t* const req = (mangoh_bridge_fileio_read_req_t*)data;
     LE_DEBUG("---> READ fd[%u](%d) bytes(%u)", req->fd, fileio->fdList[req->fd], req->size);
 
-    swi_mangoh_bridge_fileio_read_rsp_t* const rsp = (swi_mangoh_bridge_fileio_read_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_read_rsp_t* const rsp = (mangoh_bridge_fileio_read_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
     const ssize_t bytesRead = read(fileio->fdList[req->fd], rsp->data, req->size);
     if (bytesRead < 0)
     {
         LE_ERROR("ERROR read() fd[%u](%d) failed(%d/%d)",  req->fd, fileio->fdList[req->fd], bytesRead, errno);
 
-        res = swi_mangoh_bridge_sendNack(fileio->bridge);
+        res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
             goto cleanup;
         }
 
@@ -388,12 +388,12 @@ static int swi_mangoh_bridge_fileio_read(void* param, const unsigned char* data,
 
     rsp->len = bytesRead;
     LE_DEBUG("fd[%u](%d), result(%d)", req->fd, fileio->fdList[req->fd], rsp->len);
-    swi_mangoh_bridge_packet_dumpBuffer(rsp->data, rsp->len);
+    mangoh_bridge_packet_dumpBuffer(rsp->data, rsp->len);
 
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(rsp->len) + rsp->len);
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(rsp->len) + rsp->len);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -401,15 +401,15 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_close(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_fileio_close(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_fileio_close_req_t* const req = (swi_mangoh_bridge_fileio_close_req_t*)data;
+    const mangoh_bridge_fileio_close_req_t* const req = (mangoh_bridge_fileio_close_req_t*)data;
     LE_DEBUG("---> CLOSE fd[%u](%d)", req->fd, fileio->fdList[req->fd]);
 
     res = close(fileio->fdList[req->fd]);
@@ -424,10 +424,10 @@ static int swi_mangoh_bridge_fileio_close(void* param, const unsigned char* data
         {
             LE_ERROR("ERROR close() fd[%u](%d) failed(%d/%d)", req->fd, fileio->fdList[req->fd], res, errno);
 
-            res = swi_mangoh_bridge_sendNack(fileio->bridge);
+            res = mangoh_bridge_sendNack(fileio->bridge);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_sendNack() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_sendNack() failed(%d)", res);
                 goto cleanup;
             }
 
@@ -436,33 +436,33 @@ static int swi_mangoh_bridge_fileio_close(void* param, const unsigned char* data
         }
     }
 
-    swi_mangoh_bridge_fileio_close_rsp_t* const rsp = (swi_mangoh_bridge_fileio_close_rsp_t*)((swi_mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
+    mangoh_bridge_fileio_close_rsp_t* const rsp = (mangoh_bridge_fileio_close_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
     rsp->result = res;
     LE_DEBUG("fd[%u](%d) result(%u)", req->fd, fileio->fdList[req->fd], rsp->result);
-    res = swi_mangoh_bridge_sendResult(fileio->bridge, sizeof(swi_mangoh_bridge_fileio_close_rsp_t));
+    res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_close_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
-    fileio->fdList[req->fd] = SWI_MANGOH_BRIDGE_FILEIO_INVALID_FD;
+    fileio->fdList[req->fd] = MANGOH_BRIDGE_FILEIO_INVALID_FD;
 
 cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_fileio_reset(void* param)
+static int mangoh_bridge_fileio_reset(void* param)
 {
-    swi_mangoh_bridge_fileio_t* fileio = (swi_mangoh_bridge_fileio_t*)param;
+    mangoh_bridge_fileio_t* fileio = (mangoh_bridge_fileio_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
 
     uint32_t idx = 0;
-    for (idx = 0; idx < SWI_MANGOH_BRIDGE_FILEIO_LIST_SIZE; idx++)
+    for (idx = 0; idx < MANGOH_BRIDGE_FILEIO_LIST_SIZE; idx++)
     {
-        if (fileio->fdList[idx] != SWI_MANGOH_BRIDGE_FILEIO_INVALID_FD)
+        if (fileio->fdList[idx] != MANGOH_BRIDGE_FILEIO_INVALID_FD)
         {
             LE_DEBUG("close fd[%u](%d)", idx, fileio->fdList[idx]);
             res = close(fileio->fdList[idx]);
@@ -473,7 +473,7 @@ static int swi_mangoh_bridge_fileio_reset(void* param)
                 goto cleanup;
             }
 
-            fileio->fdList[idx] = SWI_MANGOH_BRIDGE_FILEIO_INVALID_FD;
+            fileio->fdList[idx] = MANGOH_BRIDGE_FILEIO_INVALID_FD;
         }
     }
 
@@ -483,7 +483,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_fileio_init(swi_mangoh_bridge_fileio_t* fileio, void* bridge)
+int mangoh_bridge_fileio_init(mangoh_bridge_fileio_t* fileio, void* bridge)
 {
     int32_t res = LE_OK;
 
@@ -493,68 +493,68 @@ int swi_mangoh_bridge_fileio_init(swi_mangoh_bridge_fileio_t* fileio, void* brid
     LE_DEBUG("init");
 
     fileio->bridge = bridge;
-    memset(fileio->fdList, SWI_MANGOH_BRIDGE_FILEIO_INVALID_FD, sizeof(fileio->fdList));
+    memset(fileio->fdList, MANGOH_BRIDGE_FILEIO_INVALID_FD, sizeof(fileio->fdList));
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_OPEN, fileio, swi_mangoh_bridge_fileio_open);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_OPEN, fileio, mangoh_bridge_fileio_open);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_CLOSE, fileio, swi_mangoh_bridge_fileio_close);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_CLOSE, fileio, mangoh_bridge_fileio_close);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_WRITE, fileio, swi_mangoh_bridge_fileio_write);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_WRITE, fileio, mangoh_bridge_fileio_write);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_READ, fileio, swi_mangoh_bridge_fileio_read);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_READ, fileio, mangoh_bridge_fileio_read);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_IS_DIRECTORY, fileio, swi_mangoh_bridge_fileio_isDir);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_IS_DIRECTORY, fileio, mangoh_bridge_fileio_isDir);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_SEEK, fileio, swi_mangoh_bridge_fileio_seek);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_SEEK, fileio, mangoh_bridge_fileio_seek);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_POSITION, fileio, swi_mangoh_bridge_fileio_position);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_POSITION, fileio, mangoh_bridge_fileio_position);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(fileio->bridge, SWI_MANGOH_BRIDGE_FILEIO_SIZE, fileio, swi_mangoh_bridge_fileio_size);
+    res = mangoh_bridge_registerCommandProcessor(fileio->bridge, MANGOH_BRIDGE_FILEIO_SIZE, fileio, mangoh_bridge_fileio_size);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerReset(fileio->bridge, fileio, swi_mangoh_bridge_fileio_reset);
+    res = mangoh_bridge_registerReset(fileio->bridge, fileio, mangoh_bridge_fileio_reset);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerReset() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerReset() failed(%d)", res);
         goto cleanup;
     }
 
@@ -563,16 +563,16 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_fileio_destroy(swi_mangoh_bridge_fileio_t* fileio)
+int mangoh_bridge_fileio_destroy(mangoh_bridge_fileio_t* fileio)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(fileio);
 
-    res = swi_mangoh_bridge_fileio_reset(fileio);
+    res = mangoh_bridge_fileio_reset(fileio);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_fileio_reset() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_fileio_reset() failed(%d)", res);
     }
 
     return LE_OK;

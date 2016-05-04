@@ -5,7 +5,7 @@
 #include "legato.h"
 #include "tcpServer.h"
 
-int swi_mangoh_bridge_tcp_server_acceptNewConnections(swi_mangoh_bridge_tcp_server_t* tcpServer, swi_mangoh_bridge_tcp_client_t* tcpClients)
+int mangoh_bridge_tcp_server_acceptNewConnections(mangoh_bridge_tcp_server_t* tcpServer, mangoh_bridge_tcp_client_t* tcpClients)
 {
     int32_t res = LE_OK;
 
@@ -47,7 +47,7 @@ int swi_mangoh_bridge_tcp_server_acceptNewConnections(swi_mangoh_bridge_tcp_serv
             goto cleanup;
         }
 
-        if (tcpClients->info[tcpClients->nextId].sockFd == SWI_MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID)
+        if (tcpClients->info[tcpClients->nextId].sockFd == MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID)
         {
             LE_ASSERT(!tcpClients->info[tcpClients->nextId].sendBuffer && !tcpClients->info[tcpClients->nextId].rxBuffer);
 
@@ -55,7 +55,7 @@ int swi_mangoh_bridge_tcp_server_acceptNewConnections(swi_mangoh_bridge_tcp_serv
             tcpClients->info[tcpClients->nextId].sockFd = newFd;
 
             tcpClients->info[tcpClients->nextId].sendBuffLen = 0;
-            tcpClients->info[tcpClients->nextId].sendBuffer = calloc(1, SWI_MANGOH_BRIDGE_TCP_CLIENT_SEND_BUFFER_LEN);
+            tcpClients->info[tcpClients->nextId].sendBuffer = calloc(1, MANGOH_BRIDGE_TCP_CLIENT_SEND_BUFFER_LEN);
             if (!tcpClients->info[tcpClients->nextId].sendBuffer)
             {
                 LE_ERROR("ERROR calloc() failed");
@@ -64,7 +64,7 @@ int swi_mangoh_bridge_tcp_server_acceptNewConnections(swi_mangoh_bridge_tcp_serv
             }
 
             tcpClients->info[tcpClients->nextId].recvBuffLen = 0;
-            tcpClients->info[tcpClients->nextId].rxBuffer = calloc(1, SWI_MANGOH_BRIDGE_TCP_CLIENT_SEND_BUFFER_LEN);
+            tcpClients->info[tcpClients->nextId].rxBuffer = calloc(1, MANGOH_BRIDGE_TCP_CLIENT_SEND_BUFFER_LEN);
             if (!tcpClients->info[tcpClients->nextId].rxBuffer)
             {
                 LE_ERROR("ERROR calloc() failed");
@@ -72,7 +72,7 @@ int swi_mangoh_bridge_tcp_server_acceptNewConnections(swi_mangoh_bridge_tcp_serv
                 goto cleanup;
             }
 
-            swi_mangoh_bridge_tcp_client_setNextId(tcpClients);
+            mangoh_bridge_tcp_client_setNextId(tcpClients);
         }
         else
         {
@@ -97,7 +97,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_tcp_server_start(swi_mangoh_bridge_tcp_server_t* tcpServer, const char* serverIp, const char* service, uint32_t backlog)
+int mangoh_bridge_tcp_server_start(mangoh_bridge_tcp_server_t* tcpServer, const char* serverIp, const char* service, uint32_t backlog)
 {
     int32_t res = LE_OK;
 
@@ -152,17 +152,17 @@ int swi_mangoh_bridge_tcp_server_start(swi_mangoh_bridge_tcp_server_t* tcpServer
                     goto cleanup;
                 }
 
-                tcpServer->sockFd = SWI_MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID;
+                tcpServer->sockFd = MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID;
                 continue;
             }
 
             break;
         }
 
-        if (tcpServer->sockFd == SWI_MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID)
+        if (tcpServer->sockFd == MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID)
         {
             LE_ERROR("ERROR bind '%s:%s' failed", serverIp, service);
-            sleep(SWI_MANGOH_BRIDGE_TCP_SERVER_RETRY_BIND_DELAY_SECS);
+            sleep(MANGOH_BRIDGE_TCP_SERVER_RETRY_BIND_DELAY_SECS);
             continue;
         }
 
@@ -190,7 +190,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_tcp_server_stop(swi_mangoh_bridge_tcp_server_t* tcpServer)
+int mangoh_bridge_tcp_server_stop(mangoh_bridge_tcp_server_t* tcpServer)
 {
     int32_t res = LE_OK;
 
@@ -204,7 +204,7 @@ int swi_mangoh_bridge_tcp_server_stop(swi_mangoh_bridge_tcp_server_t* tcpServer)
             goto cleanup;
         }
 
-        tcpServer->sockFd = SWI_MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID;
+        tcpServer->sockFd = MANGOH_BRIDGE_TCP_SERVER_SOCKET_INVALID;
     }
 
     res = LE_OK;

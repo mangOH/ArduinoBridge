@@ -3,20 +3,20 @@
 #include "bridge.h"
 #include "airVantage.h"
 
-static int swi_mangoh_bridge_air_vantage_sessionStart(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_sessionEnd(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_subscribe(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_pushBoolean(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_pushInteger(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_pushFloat(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_pushString(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_available(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_air_vantage_recv(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_sessionStart(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_sessionEnd(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_subscribe(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_pushBoolean(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_pushInteger(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_pushFloat(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_pushString(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_available(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_air_vantage_recv(void*, const unsigned char*, uint32_t);
 
-static void swi_mangoh_bridge_air_vantage_removedataUpdateHdlrs(swi_mangoh_bridge_air_vantage_t*);
-static void swi_mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t, const char*, void*);
+static void mangoh_bridge_air_vantage_removedataUpdateHdlrs(mangoh_bridge_air_vantage_t*);
+static void mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t, const char*, void*);
 
-static void swi_mangoh_bridge_air_vantage_removedataUpdateHdlrs(swi_mangoh_bridge_air_vantage_t* airVantage)
+static void mangoh_bridge_air_vantage_removedataUpdateHdlrs(mangoh_bridge_air_vantage_t* airVantage)
 {
   LE_ASSERT(airVantage);
 
@@ -40,9 +40,9 @@ static void swi_mangoh_bridge_air_vantage_removedataUpdateHdlrs(swi_mangoh_bridg
   }
 }
 
-static int swi_mangoh_bridge_air_vantage_sessionStart(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_sessionStart(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -64,21 +64,21 @@ static int swi_mangoh_bridge_air_vantage_sessionStart(void* param, const unsigne
     LE_DEBUG("len(%u)", len);
     ptr += sizeof(len);
 
-    char url[SWI_MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
+    char url[MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
     memcpy(url, ptr, len);
     LE_DEBUG("url('%s')", url);
     ptr += len;
 
-    char pw[SWI_MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
+    char pw[MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
     memcpy(pw, ptr, size - len - sizeof(len) - sizeof(pushAv) - sizeof(storage));
     LE_DEBUG("pw('%s')", pw);
 
     dataRouter_SessionStart(url, pw, pushAv, storage);
 
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+    res = mangoh_bridge_sendResult(airVantage->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -86,9 +86,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_sessionEnd(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_sessionEnd(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -96,13 +96,13 @@ static int swi_mangoh_bridge_air_vantage_sessionEnd(void* param, const unsigned 
 
     LE_DEBUG("---> SESSSION END");
 
-    swi_mangoh_bridge_air_vantage_removedataUpdateHdlrs(airVantage);
+    mangoh_bridge_air_vantage_removedataUpdateHdlrs(airVantage);
     dataRouter_SessionEnd();
 
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+    res = mangoh_bridge_sendResult(airVantage->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -110,9 +110,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_subscribe(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_subscribe(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -126,7 +126,7 @@ static int swi_mangoh_bridge_air_vantage_subscribe(void* param, const unsigned c
     LE_DEBUG("len(%u)", len);
     ptr += sizeof(len);
 
-    char fieldName[SWI_MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
+    char fieldName[MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
     memcpy(fieldName, ptr, len);
     LE_DEBUG("field('%s')", fieldName);
 
@@ -134,7 +134,7 @@ static int swi_mangoh_bridge_air_vantage_subscribe(void* param, const unsigned c
     if (!dataUpdateHandlerRef)
     {
         LE_DEBUG("add data update handler('%s')", fieldName);
-        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
+        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
             LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
@@ -150,10 +150,10 @@ static int swi_mangoh_bridge_air_vantage_subscribe(void* param, const unsigned c
         }
     }
 
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+    res = mangoh_bridge_sendResult(airVantage->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -161,9 +161,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_pushBoolean(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_pushBoolean(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -177,7 +177,7 @@ static int swi_mangoh_bridge_air_vantage_pushBoolean(void* param, const unsigned
     LE_DEBUG("len(%u)", len);
     ptr += sizeof(len);
 
-    char fieldName[SWI_MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
+    char fieldName[MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
     memcpy(fieldName, ptr, len);
     LE_DEBUG("field('%s')", fieldName);
     ptr += len;
@@ -192,7 +192,7 @@ static int swi_mangoh_bridge_air_vantage_pushBoolean(void* param, const unsigned
     if (!dataUpdateHandlerRef)
     {
         LE_DEBUG("add data update handler('%s')", fieldName);
-        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
+        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
             LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
@@ -208,10 +208,10 @@ static int swi_mangoh_bridge_air_vantage_pushBoolean(void* param, const unsigned
         }
     }
 
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+    res = mangoh_bridge_sendResult(airVantage->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -219,9 +219,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_pushInteger(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_pushInteger(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -235,7 +235,7 @@ static int swi_mangoh_bridge_air_vantage_pushInteger(void* param, const unsigned
     LE_DEBUG("len(%u)", len);
     ptr += sizeof(len);
 
-    char fieldName[SWI_MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
+    char fieldName[MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
     memcpy(fieldName, ptr, len);
     LE_DEBUG("field('%s')", fieldName);
     ptr += len;
@@ -250,7 +250,7 @@ static int swi_mangoh_bridge_air_vantage_pushInteger(void* param, const unsigned
     if (!dataUpdateHandlerRef)
     {
         LE_DEBUG("add data update handler('%s')", fieldName);
-        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
+        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
             LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
@@ -266,10 +266,10 @@ static int swi_mangoh_bridge_air_vantage_pushInteger(void* param, const unsigned
         }
     }
 
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+    res = mangoh_bridge_sendResult(airVantage->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -277,9 +277,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_pushFloat(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_pushFloat(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     float fVal = 0;
     int32_t res = LE_OK;
 
@@ -294,7 +294,7 @@ static int swi_mangoh_bridge_air_vantage_pushFloat(void* param, const unsigned c
     LE_DEBUG("len(%u)", len);
     ptr += sizeof(len);
 
-    char fieldName[SWI_MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
+    char fieldName[MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
     memcpy(fieldName, ptr, len);
     LE_DEBUG("field('%s')", fieldName);
     ptr += len;
@@ -317,7 +317,7 @@ static int swi_mangoh_bridge_air_vantage_pushFloat(void* param, const unsigned c
     if (!dataUpdateHandlerRef)
     {
         LE_DEBUG("add data update handler('%s')", fieldName);
-        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
+        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
             LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
@@ -333,10 +333,10 @@ static int swi_mangoh_bridge_air_vantage_pushFloat(void* param, const unsigned c
         }
     }
 
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+    res = mangoh_bridge_sendResult(airVantage->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -344,9 +344,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_pushString(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_pushString(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -360,12 +360,12 @@ static int swi_mangoh_bridge_air_vantage_pushString(void* param, const unsigned 
     LE_DEBUG("len(%u)", len);
     ptr += sizeof(len);
 
-    char fieldName[SWI_MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
+    char fieldName[MANGOH_BRIDGE_AIR_VANTAGE_FIELD_NAME_MAX_LEN] = {0};
     memcpy(fieldName, ptr, len);
     LE_DEBUG("field('%s')", fieldName);
     ptr += len;
 
-    char val[SWI_MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
+    char val[MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
     memcpy(val, ptr, size - len - sizeof(len));
     LE_DEBUG("value('%s')", val);
 
@@ -375,7 +375,7 @@ static int swi_mangoh_bridge_air_vantage_pushString(void* param, const unsigned 
     if (!dataUpdateHandlerRef)
     {
         LE_DEBUG("add data update handler('%s')", fieldName);
-        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, swi_mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
+        dataUpdateHandlerRef = dataRouter_AddDataUpdateHandler(fieldName, mangoh_bridge_air_vantage_dataUpdateHdlr, airVantage);
         if (!dataUpdateHandlerRef)
         {
             LE_ERROR("ERROR dataRouter_AddDataUpdateHandler() failed");
@@ -391,10 +391,10 @@ static int swi_mangoh_bridge_air_vantage_pushString(void* param, const unsigned 
         }
     }
 
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+    res = mangoh_bridge_sendResult(airVantage->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -402,26 +402,26 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_available(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_available(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
-    le_log_TraceRef_t traceRef = swi_mangoh_bridge_getTraceRef();
+    le_log_TraceRef_t traceRef = mangoh_bridge_getTraceRef();
 
     LE_ASSERT(airVantage);
     LE_ASSERT(data);
 
     LE_TRACE(traceRef, "---> AVAIL");
 
-    swi_mangoh_bridge_air_vantage_avail_rsp_t* const rsp = (swi_mangoh_bridge_air_vantage_avail_rsp_t*)((swi_mangoh_bridge_t*)airVantage->bridge)->packet.msg.data;
+    mangoh_bridge_air_vantage_avail_rsp_t* const rsp = (mangoh_bridge_air_vantage_avail_rsp_t*)((mangoh_bridge_t*)airVantage->bridge)->packet.msg.data;
 
     LE_TRACE(traceRef, "Rx buffer length(%u)", airVantage->rxBuffLen);
     rsp->result = htons(airVantage->rxBuffLen);
     LE_TRACE(traceRef, "result(%d)", rsp->result);
-    res = swi_mangoh_bridge_sendResult(airVantage->bridge, sizeof(rsp->result));
+    res = mangoh_bridge_sendResult(airVantage->bridge, sizeof(rsp->result));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -429,9 +429,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_air_vantage_recv(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_air_vantage_recv(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -441,7 +441,7 @@ static int swi_mangoh_bridge_air_vantage_recv(void* param, const unsigned char* 
 
     if (airVantage->rxBuffLen)
     {
-        swi_mangoh_bridge_air_vantage_recv_rsp_t* const rsp = (swi_mangoh_bridge_air_vantage_recv_rsp_t*)((swi_mangoh_bridge_t*)airVantage->bridge)->packet.msg.data;
+        mangoh_bridge_air_vantage_recv_rsp_t* const rsp = (mangoh_bridge_air_vantage_recv_rsp_t*)((mangoh_bridge_t*)airVantage->bridge)->packet.msg.data;
         uint8_t rdLen = (sizeof(rsp->data) > airVantage->rxBuffLen) ? airVantage->rxBuffLen:sizeof(rsp->data);
 
         memcpy(rsp->data, (const char*)airVantage->rxBuffer, rdLen);
@@ -450,19 +450,19 @@ static int swi_mangoh_bridge_air_vantage_recv(void* param, const unsigned char* 
         airVantage->rxBuffLen -= rdLen;
 
         LE_DEBUG("result(%u)", rdLen);
-        res = swi_mangoh_bridge_sendResult(airVantage->bridge, rdLen);
+        res = mangoh_bridge_sendResult(airVantage->bridge, rdLen);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
             goto cleanup;
         }
     }
     else
     {
-        res = swi_mangoh_bridge_sendResult(airVantage->bridge, 0);
+        res = mangoh_bridge_sendResult(airVantage->bridge, 0);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
             goto cleanup;
         }
     }
@@ -471,11 +471,11 @@ cleanup:
     return res;
 }
 
-static void swi_mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t type, const char* key, void* context)
+static void mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t type, const char* key, void* context)
 {
-    char msg[SWI_MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN] = {0};
+    char msg[MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN] = {0};
     uint32_t timestamp = 0;
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)context;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)context;
     uint16_t len = 0;
 
     LE_ASSERT(context);
@@ -491,7 +491,7 @@ static void swi_mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t t
       dataRouter_ReadBoolean(key, &value, &timestamp);
 
       time_t ts = timestamp;
-      snprintf(msg, SWI_MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%d|%s", key, value, ctime(&ts));
+      snprintf(msg, MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%d|%s", key, value, ctime(&ts));
       break;
     }
     case DATAROUTER_INTEGER:
@@ -500,7 +500,7 @@ static void swi_mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t t
       dataRouter_ReadInteger(key, &value, &timestamp);
 
       time_t ts = timestamp;
-      snprintf(msg, SWI_MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%d|%s", key, value, ctime(&ts));
+      snprintf(msg, MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%d|%s", key, value, ctime(&ts));
       break;
     }
     case DATAROUTER_FLOAT:
@@ -509,16 +509,16 @@ static void swi_mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t t
       dataRouter_ReadFloat(key, &value, &timestamp);
 
       time_t ts = timestamp;
-      snprintf(msg, SWI_MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%f|%s", key, value, ctime(&ts));
+      snprintf(msg, MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%f|%s", key, value, ctime(&ts));
       break;
     }
     case DATAROUTER_STRING:
     {
-      char value[SWI_MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
+      char value[MANGOH_BRIDGE_AIR_VANTAGE_VALUE_MAX_LEN] = {0};
       dataRouter_ReadString(key, value, sizeof(value), &timestamp);
 
       time_t ts = timestamp;
-      snprintf(msg, SWI_MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%s|%s", key, value, ctime(&ts));
+      snprintf(msg, MANGOH_BRIDGE_AIR_VANTAGE_MAX_MSG_LEN, "|%s|%s|%s", key, value, ctime(&ts));
       break;
     }
     }
@@ -539,18 +539,18 @@ cleanup:
     return;
 }
 
-static int swi_mangoh_bridge_air_vantage_reset(void* param)
+static int mangoh_bridge_air_vantage_reset(void* param)
 {
-    swi_mangoh_bridge_air_vantage_t* airVantage = (swi_mangoh_bridge_air_vantage_t*)param;
+    mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
 
     LE_ASSERT(airVantage);
 
-    swi_mangoh_bridge_air_vantage_removedataUpdateHdlrs(airVantage);
+    mangoh_bridge_air_vantage_removedataUpdateHdlrs(airVantage);
     dataRouter_SessionEnd();
     return LE_OK;
 }
 
-int swi_mangoh_bridge_air_vantage_init(swi_mangoh_bridge_air_vantage_t* airVantage, void* bridge)
+int mangoh_bridge_air_vantage_init(mangoh_bridge_air_vantage_t* airVantage, void* bridge)
 {
     int32_t res = LE_OK;
 
@@ -559,76 +559,76 @@ int swi_mangoh_bridge_air_vantage_init(swi_mangoh_bridge_air_vantage_t* airVanta
     LE_DEBUG("init");
 
     airVantage->bridge = bridge;
-    airVantage->dataUpdateHandlers = le_hashmap_Create(SWI_MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_NAME, SWI_MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_SIZE,
+    airVantage->dataUpdateHandlers = le_hashmap_Create(MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_NAME, MANGOH_BRIDGE_AIR_VANTAGE_DATA_UPDATE_MAP_SIZE,
         le_hashmap_HashString, le_hashmap_EqualsString);
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_SESSION_START, airVantage, swi_mangoh_bridge_air_vantage_sessionStart);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_SESSION_START, airVantage, mangoh_bridge_air_vantage_sessionStart);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_SESSION_END, airVantage, swi_mangoh_bridge_air_vantage_sessionEnd);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_SESSION_END, airVantage, mangoh_bridge_air_vantage_sessionEnd);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_SUBSCRIBE, airVantage, swi_mangoh_bridge_air_vantage_subscribe);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_SUBSCRIBE, airVantage, mangoh_bridge_air_vantage_subscribe);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_PUSH_BOOLEAN, airVantage, swi_mangoh_bridge_air_vantage_pushBoolean);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_PUSH_BOOLEAN, airVantage, mangoh_bridge_air_vantage_pushBoolean);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_PUSH_INTEGER, airVantage, swi_mangoh_bridge_air_vantage_pushInteger);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_PUSH_INTEGER, airVantage, mangoh_bridge_air_vantage_pushInteger);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_PUSH_FLOAT, airVantage, swi_mangoh_bridge_air_vantage_pushFloat);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_PUSH_FLOAT, airVantage, mangoh_bridge_air_vantage_pushFloat);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_PUSH_STRING, airVantage, swi_mangoh_bridge_air_vantage_pushString);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_PUSH_STRING, airVantage, mangoh_bridge_air_vantage_pushString);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_AVAILABLE, airVantage, swi_mangoh_bridge_air_vantage_available);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_AVAILABLE, airVantage, mangoh_bridge_air_vantage_available);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(airVantage->bridge, SWI_MANGOH_BRIDGE_AIR_VANTAGE_RECV, airVantage, swi_mangoh_bridge_air_vantage_recv);
+    res = mangoh_bridge_registerCommandProcessor(airVantage->bridge, MANGOH_BRIDGE_AIR_VANTAGE_RECV, airVantage, mangoh_bridge_air_vantage_recv);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerReset(airVantage->bridge, airVantage, swi_mangoh_bridge_air_vantage_reset);
+    res = mangoh_bridge_registerReset(airVantage->bridge, airVantage, mangoh_bridge_air_vantage_reset);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerReset() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerReset() failed(%d)", res);
         goto cleanup;
     }
 
@@ -637,9 +637,9 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_air_vantage_destroy(swi_mangoh_bridge_air_vantage_t* airVantage)
+int mangoh_bridge_air_vantage_destroy(mangoh_bridge_air_vantage_t* airVantage)
 {
-    swi_mangoh_bridge_air_vantage_removedataUpdateHdlrs(airVantage);
+    mangoh_bridge_air_vantage_removedataUpdateHdlrs(airVantage);
     dataRouter_SessionEnd();
     return LE_OK;
 }

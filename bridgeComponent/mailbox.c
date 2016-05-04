@@ -9,32 +9,32 @@
 #include "json.h"
 #include "mailbox.h"
 
-static int swi_mangoh_bridge_mailbox_send(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_mailbox_send_json(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_mailbox_recv(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_mailbox_available(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_mailbox_datastorePut(void*, const unsigned char*, uint32_t);
-static int swi_mangoh_bridge_mailbox_datastoreGet(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_mailbox_send(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_mailbox_send_json(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_mailbox_recv(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_mailbox_available(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_mailbox_datastorePut(void*, const unsigned char*, uint32_t);
+static int mangoh_bridge_mailbox_datastoreGet(void*, const unsigned char*, uint32_t);
 
-static int swi_mangoh_bridge_mailbox_processRawCommand(swi_mangoh_bridge_mailbox_t*, const swi_mangoh_bridge_json_data_t*);
-static int swi_mangoh_bridge_mailbox_processGetCommand(swi_mangoh_bridge_mailbox_t*, const swi_mangoh_bridge_json_data_t*);
-static int swi_mangoh_bridge_mailbox_processPutCommand(swi_mangoh_bridge_mailbox_t*, const swi_mangoh_bridge_json_data_t*);
-static int swi_mangoh_bridge_mailbox_processDeleteCommand(swi_mangoh_bridge_mailbox_t*, const swi_mangoh_bridge_json_data_t*);
-static int swi_mangoh_bridge_mailbox_processCommands(swi_mangoh_bridge_mailbox_t*);
+static int mangoh_bridge_mailbox_processRawCommand(mangoh_bridge_mailbox_t*, const mangoh_bridge_json_data_t*);
+static int mangoh_bridge_mailbox_processGetCommand(mangoh_bridge_mailbox_t*, const mangoh_bridge_json_data_t*);
+static int mangoh_bridge_mailbox_processPutCommand(mangoh_bridge_mailbox_t*, const mangoh_bridge_json_data_t*);
+static int mangoh_bridge_mailbox_processDeleteCommand(mangoh_bridge_mailbox_t*, const mangoh_bridge_json_data_t*);
+static int mangoh_bridge_mailbox_processCommands(mangoh_bridge_mailbox_t*);
 
-static int swi_mangoh_bridge_mailbox_runner(void*);
-static int swi_mangoh_bridge_mailbox_reset(void*);
+static int mangoh_bridge_mailbox_runner(void*);
+static int mangoh_bridge_mailbox_reset(void*);
 
-static int swi_mangoh_bridge_mailbox_send(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_mailbox_send(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
-    swi_mangoh_bridge_json_data_t* jsonReqData = NULL;
+    mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
+    mangoh_bridge_json_data_t* jsonReqData = NULL;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_mailbox_send_req_t* const req = (swi_mangoh_bridge_mailbox_send_req_t*)data;
+    const mangoh_bridge_mailbox_send_req_t* const req = (mangoh_bridge_mailbox_send_req_t*)data;
     LE_DEBUG("---> SEND");
 
     mailbox->jsonMsgLen = size;
@@ -46,56 +46,56 @@ static int swi_mangoh_bridge_mailbox_send(void* param, const unsigned char* data
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_createObject(&jsonReqData);
+    res = mangoh_bridge_json_createObject(&jsonReqData);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_createObject() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_createObject() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setRequestCommand(jsonReqData, SWI_MANGOH_BRIDGE_MAILBOX_RAW_COMMAND);
+    res = mangoh_bridge_json_setRequestCommand(jsonReqData, MANGOH_BRIDGE_MAILBOX_RAW_COMMAND);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setRequestCommand() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setRequestCommand() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setData(jsonReqData, req->data, size);
+    res = mangoh_bridge_json_setData(jsonReqData, req->data, size);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setData() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setData() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_write(jsonReqData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
+    res = mangoh_bridge_json_write(jsonReqData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
+    res = mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_client_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_client_write() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("result(%d)", res);
-    res = swi_mangoh_bridge_sendResult(mailbox->bridge, 0);
+    res = mangoh_bridge_sendResult(mailbox->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
 cleanup:
     if (jsonReqData)
     {
-        int32_t err = swi_mangoh_bridge_json_destroy(&jsonReqData);
+        int32_t err = mangoh_bridge_json_destroy(&jsonReqData);
         if (err != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
             res = res ? res:err;
         }
     }
@@ -110,73 +110,73 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_send_json(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_mailbox_send_json(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
-    swi_mangoh_bridge_json_data_t* jsonReqData = NULL;
+    mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
+    mangoh_bridge_json_data_t* jsonReqData = NULL;
     uint32_t len = size;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_mailbox_json_send_req_t* const req = (swi_mangoh_bridge_mailbox_json_send_req_t*)data;
+    const mangoh_bridge_mailbox_json_send_req_t* const req = (mangoh_bridge_mailbox_json_send_req_t*)data;
     LE_DEBUG("---> SEND JSON");
 
-    res = swi_mangoh_bridge_json_read(req->data, &len, &jsonReqData);
+    res = mangoh_bridge_json_read(req->data, &len, &jsonReqData);
     if (res)
     {
-        res = swi_mangoh_bridge_json_createObject(&jsonReqData);
+        res = mangoh_bridge_json_createObject(&jsonReqData);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_createObject() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_createObject() failed(%d)", res);
             goto cleanup;
         }
 
-        res = swi_mangoh_bridge_json_setRequestCommand(jsonReqData, SWI_MANGOH_BRIDGE_MAILBOX_RAW_COMMAND);
+        res = mangoh_bridge_json_setRequestCommand(jsonReqData, MANGOH_BRIDGE_MAILBOX_RAW_COMMAND);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_setRequestCommand() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_setRequestCommand() failed(%d)", res);
             goto cleanup;
         }
 
-        res = swi_mangoh_bridge_json_setData(jsonReqData, req->data, size);
+        res = mangoh_bridge_json_setData(jsonReqData, req->data, size);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_setData() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_setData() failed(%d)", res);
             goto cleanup;
         }
     }
 
-    res = swi_mangoh_bridge_json_write(jsonReqData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
+    res = mangoh_bridge_json_write(jsonReqData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
+    res = mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_client_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_client_write() failed(%d)", res);
         goto cleanup;
     }
 
     LE_DEBUG("result(%d)", res);
-    res = swi_mangoh_bridge_sendResult(mailbox->bridge, 0);
+    res = mangoh_bridge_sendResult(mailbox->bridge, 0);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
 cleanup:
     if (jsonReqData)
     {
-        int32_t err = swi_mangoh_bridge_json_destroy(&jsonReqData);
+        int32_t err = mangoh_bridge_json_destroy(&jsonReqData);
         if (err != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
             res = res ? res:err;
         }
     }
@@ -191,9 +191,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_recv(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_mailbox_recv(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
+    mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
@@ -203,7 +203,7 @@ static int swi_mangoh_bridge_mailbox_recv(void* param, const unsigned char* data
 
     if (mailbox->rxBuffLen)
     {
-        swi_mangoh_bridge_mailbox_recv_rsp_t* const rsp = (swi_mangoh_bridge_mailbox_recv_rsp_t*)((swi_mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
+        mangoh_bridge_mailbox_recv_rsp_t* const rsp = (mangoh_bridge_mailbox_recv_rsp_t*)((mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
         uint8_t rdLen = (sizeof(rsp->data) > mailbox->rxBuffLen) ? mailbox->rxBuffLen:sizeof(rsp->data);
 
         memcpy(rsp->data, (const char*)mailbox->rxBuffer, rdLen);
@@ -212,19 +212,19 @@ static int swi_mangoh_bridge_mailbox_recv(void* param, const unsigned char* data
         mailbox->rxBuffLen -= rdLen;
 
         LE_DEBUG("result(%u)", rdLen);
-        res = swi_mangoh_bridge_sendResult(mailbox->bridge, rdLen);
+        res = mangoh_bridge_sendResult(mailbox->bridge, rdLen);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
             goto cleanup;
         }
     }
     else
     {
-        res = swi_mangoh_bridge_sendResult(mailbox->bridge, 0);
+        res = mangoh_bridge_sendResult(mailbox->bridge, 0);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
             goto cleanup;
         }
     }
@@ -233,9 +233,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_available(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_mailbox_available(void* param, const unsigned char* data, uint32_t size)
 {
-    const swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
+    const mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
@@ -243,14 +243,14 @@ static int swi_mangoh_bridge_mailbox_available(void* param, const unsigned char*
 
     LE_DEBUG("---> AVAILABLE");
 
-    swi_mangoh_bridge_mailbox_available_rsp_t* const rsp = (swi_mangoh_bridge_mailbox_available_rsp_t*)((swi_mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
+    mangoh_bridge_mailbox_available_rsp_t* const rsp = (mangoh_bridge_mailbox_available_rsp_t*)((mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
 
     rsp->len = htons(mailbox->rxBuffLen);
     LE_DEBUG("result(%u)", mailbox->rxBuffLen);
-    res = swi_mangoh_bridge_sendResult(mailbox->bridge, sizeof(swi_mangoh_bridge_mailbox_available_rsp_t));
+    res = mangoh_bridge_sendResult(mailbox->bridge, sizeof(mangoh_bridge_mailbox_available_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -258,36 +258,36 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_datastorePut(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_mailbox_datastorePut(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
+    mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_mailbox_datastore_put_req_t* const req = (swi_mangoh_bridge_mailbox_datastore_put_req_t*)data;
-    LE_INFO("---> DATASTORE PUT");
+    const mangoh_bridge_mailbox_datastore_put_req_t* const req = (mangoh_bridge_mailbox_datastore_put_req_t*)data;
+    LE_DEBUG("---> DATASTORE PUT");
 
-    const char search[2] = { SWI_MANGOH_BRIDGE_MAILBOX_SEPARATOR, 0 };
-    char* params[SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_PARAMS] = {0};
+    const char search[2] = { MANGOH_BRIDGE_MAILBOX_SEPARATOR, 0 };
+    char* params[MANGOH_BRIDGE_MAILBOX_DATASTORE_PARAMS] = {0};
     char* token = strtok((char*)req->data, search);
     uint16_t idx = 0;
 
     while (token)
     {
-        LE_INFO("arg('%s')", token);
+        LE_DEBUG("arg('%s')", token);
         params[idx++] = token;
         token = strtok(NULL, search);
     }
 
-    swi_mangoh_bridge_mailbox_datastore_put_rsp_t* const rsp = (swi_mangoh_bridge_mailbox_datastore_put_rsp_t*)((swi_mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
-    if (idx == SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_PARAMS)
+    mangoh_bridge_mailbox_datastore_put_rsp_t* const rsp = (mangoh_bridge_mailbox_datastore_put_rsp_t*)((mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
+    if (idx == MANGOH_BRIDGE_MAILBOX_DATASTORE_PARAMS)
     {
-        swi_mangoh_bridge_json_data_t* jsonData = NULL;
-        uint32_t len = strlen(params[SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_VALUE_IDX]);
+        mangoh_bridge_json_data_t* jsonData = NULL;
+        uint32_t len = strlen(params[MANGOH_BRIDGE_MAILBOX_DATASTORE_VALUE_IDX]);
 
-        res = swi_mangoh_bridge_json_read((const uint8_t*)params[SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_VALUE_IDX], &len, &jsonData);
+        res = mangoh_bridge_json_read((const uint8_t*)params[MANGOH_BRIDGE_MAILBOX_DATASTORE_VALUE_IDX], &len, &jsonData);
         if (res != LE_OK)
         {
             LE_WARN("WARNING invalid request");
@@ -295,7 +295,7 @@ static int swi_mangoh_bridge_mailbox_datastorePut(void* param, const unsigned ch
         }
         else
         {
-            if (le_hashmap_Put(mailbox->database, params[SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_KEY_IDX], jsonData))
+            if (le_hashmap_Put(mailbox->database, params[MANGOH_BRIDGE_MAILBOX_DATASTORE_KEY_IDX], jsonData))
             {
                 LE_WARN("WARNING object replaced");
             }
@@ -309,11 +309,11 @@ static int swi_mangoh_bridge_mailbox_datastorePut(void* param, const unsigned ch
         rsp->result = false;
     }
 
-    LE_DEBUG("result(%s)", rsp->result ? "true" : "false");
-    res = swi_mangoh_bridge_sendResult(mailbox->bridge, sizeof(swi_mangoh_bridge_mailbox_datastore_put_rsp_t));
+    LE_DEBUG("result(%d)", rsp->result);
+    res = mangoh_bridge_sendResult(mailbox->bridge, sizeof(mangoh_bridge_mailbox_datastore_put_rsp_t));
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
         goto cleanup;
     }
 
@@ -321,46 +321,46 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_datastoreGet(void* param, const unsigned char* data, uint32_t size)
+static int mangoh_bridge_mailbox_datastoreGet(void* param, const unsigned char* data, uint32_t size)
 {
-    swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
+    mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
     LE_ASSERT(data);
 
-    const swi_mangoh_bridge_mailbox_datastore_get_req_t* const req = (swi_mangoh_bridge_mailbox_datastore_get_req_t*)data;
+    const mangoh_bridge_mailbox_datastore_get_req_t* const req = (mangoh_bridge_mailbox_datastore_get_req_t*)data;
     LE_DEBUG("---> DATASTORE GET('%s')", req->key);
 
-    swi_mangoh_bridge_mailbox_datastore_get_rsp_t* const rsp = (swi_mangoh_bridge_mailbox_datastore_get_rsp_t*)((swi_mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
-    swi_mangoh_bridge_json_data_t* jsonData = NULL;
+    mangoh_bridge_mailbox_datastore_get_rsp_t* const rsp = (mangoh_bridge_mailbox_datastore_get_rsp_t*)((mangoh_bridge_t*)mailbox->bridge)->packet.msg.data;
+    mangoh_bridge_json_data_t* jsonData = NULL;
 
     jsonData = le_hashmap_Get(mailbox->database, req->key);
     if (jsonData)
     {
         LE_ASSERT(!mailbox->jsonMsg);
-        res = swi_mangoh_bridge_json_write(jsonData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
+        res = mangoh_bridge_json_write(jsonData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
             goto cleanup;
         }
 
         memcpy(rsp->data, mailbox->jsonMsg, mailbox->jsonMsgLen);
         LE_DEBUG("result(%u)", mailbox->jsonMsgLen);
-        res = swi_mangoh_bridge_sendResult(mailbox->bridge, mailbox->jsonMsgLen);
+        res = mangoh_bridge_sendResult(mailbox->bridge, mailbox->jsonMsgLen);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
             goto cleanup;
         }
     }
     else
     {
-        res = swi_mangoh_bridge_sendResult(mailbox->bridge, 0);
+        res = mangoh_bridge_sendResult(mailbox->bridge, 0);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_sendResult() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_sendResult() failed(%d)", res);
             goto cleanup;
         }
     }
@@ -369,18 +369,18 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_processRawCommand(swi_mangoh_bridge_mailbox_t* mailbox, const swi_mangoh_bridge_json_data_t* jsonReqData)
+static int mangoh_bridge_mailbox_processRawCommand(mangoh_bridge_mailbox_t* mailbox, const mangoh_bridge_json_data_t* jsonReqData)
 {
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
     LE_ASSERT(jsonReqData);
 
-    swi_mangoh_bridge_json_data_t* jsonData = NULL;
-    res = swi_mangoh_bridge_json_getData(jsonReqData, &jsonData);
+    mangoh_bridge_json_data_t* jsonData = NULL;
+    res = mangoh_bridge_json_getData(jsonReqData, &jsonData);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_getData() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_getData() failed(%d)", res);
         goto cleanup;
     }
     else if (!jsonData)
@@ -391,10 +391,10 @@ static int swi_mangoh_bridge_mailbox_processRawCommand(swi_mangoh_bridge_mailbox
     }
 
     LE_ASSERT(!mailbox->jsonMsgLen && !mailbox->jsonMsg);
-    res = swi_mangoh_bridge_json_write(jsonData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
+    res = mangoh_bridge_json_write(jsonData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
         goto cleanup;
     }
 
@@ -421,9 +421,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_processGetCommand(swi_mangoh_bridge_mailbox_t* mailbox, const swi_mangoh_bridge_json_data_t* jsonReqData)
+static int mangoh_bridge_mailbox_processGetCommand(mangoh_bridge_mailbox_t* mailbox, const mangoh_bridge_json_data_t* jsonReqData)
 {
-    swi_mangoh_bridge_json_data_t* jsonRspData = NULL;
+    mangoh_bridge_json_data_t* jsonRspData = NULL;
     int32_t res = LE_OK;
     int32_t err = LE_OK;
 
@@ -431,39 +431,39 @@ static int swi_mangoh_bridge_mailbox_processGetCommand(swi_mangoh_bridge_mailbox
     LE_ASSERT(jsonReqData);
 
     char* key = NULL;
-    res = swi_mangoh_bridge_json_getKey(jsonReqData, &key);
+    res = mangoh_bridge_json_getKey(jsonReqData, &key);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_getKey() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_getKey() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_createObject(&jsonRspData);
+    res = mangoh_bridge_json_createObject(&jsonRspData);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_createObject() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_createObject() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setResponseCommand(jsonRspData, SWI_MANGOH_BRIDGE_MAILBOX_GET_COMMAND);
+    res = mangoh_bridge_json_setResponseCommand(jsonRspData, MANGOH_BRIDGE_MAILBOX_GET_COMMAND);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setResponseCommand() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setResponseCommand() failed(%d)", res);
         goto cleanup;
     }
 
     if (key)
     {
         LE_DEBUG("GET('%s')", key);
-        res = swi_mangoh_bridge_json_setKey(jsonRspData, key);
+        res = mangoh_bridge_json_setKey(jsonRspData, key);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_setKey() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_setKey() failed(%d)", res);
             goto cleanup;
         }
 
-        swi_mangoh_bridge_json_data_t* jsonDataCopy = NULL;
-        swi_mangoh_bridge_json_data_t* value = NULL;
+        mangoh_bridge_json_data_t* jsonDataCopy = NULL;
+        mangoh_bridge_json_data_t* value = NULL;
 
         value = le_hashmap_Get(mailbox->database, key);
         if (!value)
@@ -472,28 +472,28 @@ static int swi_mangoh_bridge_mailbox_processGetCommand(swi_mangoh_bridge_mailbox
         }
         else
         {
-            res = swi_mangoh_bridge_json_copyObject(&jsonDataCopy, value);
+            res = mangoh_bridge_json_copyObject(&jsonDataCopy, value);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_copyObject() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_copyObject() failed(%d)", res);
                 goto cleanup;
             }
 
-            res = swi_mangoh_bridge_json_setValue(jsonRspData, jsonDataCopy);
+            res = mangoh_bridge_json_setValue(jsonRspData, jsonDataCopy);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_setValue() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_setValue() failed(%d)", res);
                 goto cleanup;
             }
         }
     }
     else
     {
-        swi_mangoh_bridge_json_data_t* jsonArrayData = NULL;
-        res = swi_mangoh_bridge_json_createArray(&jsonArrayData);
+        mangoh_bridge_json_data_t* jsonArrayData = NULL;
+        res = mangoh_bridge_json_createArray(&jsonArrayData);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_createArray() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_createArray() failed(%d)", res);
             goto cleanup;
         }
 
@@ -511,7 +511,7 @@ static int swi_mangoh_bridge_mailbox_processGetCommand(swi_mangoh_bridge_mailbox
 
             LE_DEBUG("key('%s')", key);
 
-            const swi_mangoh_bridge_json_data_t* value = (swi_mangoh_bridge_json_data_t*)le_hashmap_GetValue(iter);
+            const mangoh_bridge_json_data_t* value = (mangoh_bridge_json_data_t*)le_hashmap_GetValue(iter);
             if (!value)
             {
                 LE_ERROR("ERROR le_hashmap_GetValue() failed");
@@ -519,20 +519,20 @@ static int swi_mangoh_bridge_mailbox_processGetCommand(swi_mangoh_bridge_mailbox
                 goto cleanup;
             }
 
-            res = swi_mangoh_bridge_json_addObject(jsonArrayData, value);
+            res = mangoh_bridge_json_addObject(jsonArrayData, value);
             if (res != LE_OK)
             {
-                LE_ERROR("ERROR swi_mangoh_bridge_json_addObject() failed(%d)", res);
+                LE_ERROR("ERROR mangoh_bridge_json_addObject() failed(%d)", res);
                 goto cleanup;
             }
 
             res = le_hashmap_NextNode(iter);
         }
 
-        res = swi_mangoh_bridge_json_setValue(jsonRspData, jsonArrayData);
+        res = mangoh_bridge_json_setValue(jsonRspData, jsonArrayData);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_setValue() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_setValue() failed(%d)", res);
             goto cleanup;
         }
     }
@@ -540,25 +540,25 @@ static int swi_mangoh_bridge_mailbox_processGetCommand(swi_mangoh_bridge_mailbox
     LE_ASSERT(!mailbox->jsonMsgLen);
     LE_ASSERT(!mailbox->jsonMsg);
 
-    res = swi_mangoh_bridge_json_write(jsonRspData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
+    res = mangoh_bridge_json_write(jsonRspData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
+    res = mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_client_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_client_write() failed(%d)", res);
         goto cleanup;
     }
 
 cleanup:
-    err = swi_mangoh_bridge_json_destroy(&jsonRspData);
+    err = mangoh_bridge_json_destroy(&jsonRspData);
     if (err != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+        LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
         res = res ? res:err;
     }
 
@@ -572,9 +572,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_processPutCommand(swi_mangoh_bridge_mailbox_t* mailbox, const swi_mangoh_bridge_json_data_t* jsonReqData)
+static int mangoh_bridge_mailbox_processPutCommand(mangoh_bridge_mailbox_t* mailbox, const mangoh_bridge_json_data_t* jsonReqData)
 {
-    swi_mangoh_bridge_json_data_t* jsonRspData = NULL;
+    mangoh_bridge_json_data_t* jsonRspData = NULL;
     int32_t res = LE_OK;
     int32_t err = LE_OK;
 
@@ -582,10 +582,10 @@ static int swi_mangoh_bridge_mailbox_processPutCommand(swi_mangoh_bridge_mailbox
     LE_ASSERT(jsonReqData);
 
     char* key = NULL;
-    res = swi_mangoh_bridge_json_getKey(jsonReqData, &key);
+    res = mangoh_bridge_json_getKey(jsonReqData, &key);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_getKey() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_getKey() failed(%d)", res);
         goto cleanup;
     }
     else if (!key)
@@ -597,11 +597,11 @@ static int swi_mangoh_bridge_mailbox_processPutCommand(swi_mangoh_bridge_mailbox
 
     LE_DEBUG("PUT('%s')", key);
 
-    swi_mangoh_bridge_json_data_t* value = NULL;
-    res = swi_mangoh_bridge_json_getValue(jsonReqData, &value);
+    mangoh_bridge_json_data_t* value = NULL;
+    res = mangoh_bridge_json_getValue(jsonReqData, &value);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_getValue() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_getValue() failed(%d)", res);
         goto cleanup;
     }
     else if (!value)
@@ -620,28 +620,28 @@ static int swi_mangoh_bridge_mailbox_processPutCommand(swi_mangoh_bridge_mailbox
         LE_DEBUG("ADDED('%s')", key);
     }
 
-    res = swi_mangoh_bridge_json_createObject(&jsonRspData);
+    res = mangoh_bridge_json_createObject(&jsonRspData);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_createObject() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_createObject() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setResponseCommand(jsonRspData, SWI_MANGOH_BRIDGE_MAILBOX_PUT_COMMAND);
+    res = mangoh_bridge_json_setResponseCommand(jsonRspData, MANGOH_BRIDGE_MAILBOX_PUT_COMMAND);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setResponseCommand() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setResponseCommand() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setKey(jsonRspData, key);
+    res = mangoh_bridge_json_setKey(jsonRspData, key);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setKey() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setKey() failed(%d)", res);
         goto cleanup;
     }
 
-    swi_mangoh_bridge_json_data_t* putValue = NULL;
+    mangoh_bridge_json_data_t* putValue = NULL;
     putValue = le_hashmap_Get(mailbox->database, key);
     if (!putValue)
     {
@@ -650,43 +650,43 @@ static int swi_mangoh_bridge_mailbox_processPutCommand(swi_mangoh_bridge_mailbox
         goto cleanup;
     }
 
-    swi_mangoh_bridge_json_data_t* jsonDataCopy = NULL;
-    res = swi_mangoh_bridge_json_copyObject(&jsonDataCopy, putValue);
+    mangoh_bridge_json_data_t* jsonDataCopy = NULL;
+    res = mangoh_bridge_json_copyObject(&jsonDataCopy, putValue);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_copyObject() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_copyObject() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setValue(jsonRspData, jsonDataCopy);
+    res = mangoh_bridge_json_setValue(jsonRspData, jsonDataCopy);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setValue() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setValue() failed(%d)", res);
         goto cleanup;
     }
 
     LE_ASSERT(!mailbox->jsonMsgLen);
     LE_ASSERT(!mailbox->jsonMsg);
 
-    res = swi_mangoh_bridge_json_write(jsonRspData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
+    res = mangoh_bridge_json_write(jsonRspData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
+    res = mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_client_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_client_write() failed(%d)", res);
         goto cleanup;
     }
 
 cleanup:
-    err = swi_mangoh_bridge_json_destroy(&jsonRspData);
+    err = mangoh_bridge_json_destroy(&jsonRspData);
     if (err != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+        LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
         res = res ? res:err;
     }
 
@@ -700,9 +700,9 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_processDeleteCommand(swi_mangoh_bridge_mailbox_t* mailbox, const swi_mangoh_bridge_json_data_t* jsonReqData)
+static int mangoh_bridge_mailbox_processDeleteCommand(mangoh_bridge_mailbox_t* mailbox, const mangoh_bridge_json_data_t* jsonReqData)
 {
-    swi_mangoh_bridge_json_data_t* jsonRspData = NULL;
+    mangoh_bridge_json_data_t* jsonRspData = NULL;
     int32_t res = LE_OK;
     int32_t err = LE_OK;
 
@@ -710,10 +710,10 @@ static int swi_mangoh_bridge_mailbox_processDeleteCommand(swi_mangoh_bridge_mail
     LE_ASSERT(jsonReqData);
 
     char* key = NULL;
-    res = swi_mangoh_bridge_json_getKey(jsonReqData, &key);
+    res = mangoh_bridge_json_getKey(jsonReqData, &key);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_getKey() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_getKey() failed(%d)", res);
         goto cleanup;
     }
     else if (!key)
@@ -725,28 +725,28 @@ static int swi_mangoh_bridge_mailbox_processDeleteCommand(swi_mangoh_bridge_mail
 
     LE_DEBUG("DELETE('%s')", key);
 
-    res = swi_mangoh_bridge_json_createObject(&jsonRspData);
+    res = mangoh_bridge_json_createObject(&jsonRspData);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_createObject() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_createObject() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setResponseCommand(jsonRspData, SWI_MANGOH_BRIDGE_MAILBOX_DELETE_COMMAND);
+    res = mangoh_bridge_json_setResponseCommand(jsonRspData, MANGOH_BRIDGE_MAILBOX_DELETE_COMMAND);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setResponseCommand() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setResponseCommand() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_json_setKey(jsonRspData, key);
+    res = mangoh_bridge_json_setKey(jsonRspData, key);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_setKey() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_setKey() failed(%d)", res);
         goto cleanup;
     }
 
-    swi_mangoh_bridge_json_data_t* value = NULL;
+    mangoh_bridge_json_data_t* value = NULL;
     value = le_hashmap_Get(mailbox->database, key);
     if (value)
     {
@@ -757,10 +757,10 @@ static int swi_mangoh_bridge_mailbox_processDeleteCommand(swi_mangoh_bridge_mail
             goto cleanup;
         }
 
-        res = swi_mangoh_bridge_json_setValue(jsonRspData, value);
+        res = mangoh_bridge_json_setValue(jsonRspData, value);
         if (res != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_setValue() failed(%d)", res);
+            LE_ERROR("ERROR mangoh_bridge_json_setValue() failed(%d)", res);
             goto cleanup;
         }
     }
@@ -769,40 +769,40 @@ static int swi_mangoh_bridge_mailbox_processDeleteCommand(swi_mangoh_bridge_mail
         LE_DEBUG("key('%s') not found", key);
     }
 
-    res = swi_mangoh_bridge_json_write(jsonRspData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
+    res = mangoh_bridge_json_write(jsonRspData, &mailbox->jsonMsg, &mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_json_write() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
+    res = mangoh_bridge_tcp_client_write(&mailbox->clients, mailbox->jsonMsg, mailbox->jsonMsgLen);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_client_write() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_client_write() failed(%d)", res);
         goto cleanup;
     }
 
 cleanup:
-    err = swi_mangoh_bridge_json_destroy(&jsonRspData);
+    err = mangoh_bridge_json_destroy(&jsonRspData);
     if (err != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+        LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
         res = res ? res:err;
     }
 
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_processCommands(swi_mangoh_bridge_mailbox_t* mailbox)
+static int mangoh_bridge_mailbox_processCommands(mangoh_bridge_mailbox_t* mailbox)
 {
-    swi_mangoh_bridge_json_data_t* jsonReqData = NULL;
+    mangoh_bridge_json_data_t* jsonReqData = NULL;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
 
     uint32_t idx = 0;
-    for (idx = 0; idx < SWI_MANGOH_BRIDGE_TCP_CLIENT_MAX_CLIENTS; idx++)
+    for (idx = 0; idx < MANGOH_BRIDGE_TCP_CLIENT_MAX_CLIENTS; idx++)
     {
         if (mailbox->clients.info[idx].recvBuffLen > 0)
         {
@@ -810,62 +810,62 @@ static int swi_mangoh_bridge_mailbox_processCommands(swi_mangoh_bridge_mailbox_t
             LE_DEBUG("Rx data(%u)", len);
 
             jsonReqData = NULL;
-            res = swi_mangoh_bridge_json_read((const uint8_t*)mailbox->clients.info[idx].rxBuffer, &len, &jsonReqData);
+            res = mangoh_bridge_json_read((const uint8_t*)mailbox->clients.info[idx].rxBuffer, &len, &jsonReqData);
             if (res == LE_OK)
             {
-                LE_ASSERT(jsonReqData && (jsonReqData->type == SWI_MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT));
+                LE_ASSERT(jsonReqData && (jsonReqData->type == MANGOH_BRIDGE_JSON_DATA_TYPE_OBJECT));
 
                 memmove(mailbox->clients.info[idx].rxBuffer, mailbox->clients.info[idx].rxBuffer + mailbox->clients.info[idx].recvBuffLen + len, len);
                 mailbox->clients.info[idx].recvBuffLen = len;
 
                 char* command = NULL;
-                res = swi_mangoh_bridge_json_getCommand(jsonReqData, &command);
+                res = mangoh_bridge_json_getCommand(jsonReqData, &command);
                 if (res != LE_OK)
                 {
-                    LE_ERROR("swi_mangoh_bridge_json_getCommand() failed(%d)", res);
+                    LE_ERROR("mangoh_bridge_json_getCommand() failed(%d)", res);
                     mailbox->clients.info[idx].recvBuffLen = 0;
-                    memset(mailbox->clients.info[idx].rxBuffer, 0, SWI_MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
+                    memset(mailbox->clients.info[idx].rxBuffer, 0, MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
                     continue;
                 }
 
                 LE_ASSERT(command);
-                if (!strcmp(command, SWI_MANGOH_BRIDGE_MAILBOX_RAW_COMMAND))
+                if (!strcmp(command, MANGOH_BRIDGE_MAILBOX_RAW_COMMAND))
                 {
                     LE_DEBUG("--> RAW");
-                    res = swi_mangoh_bridge_mailbox_processRawCommand(mailbox, jsonReqData);
+                    res = mangoh_bridge_mailbox_processRawCommand(mailbox, jsonReqData);
                     if (res != LE_OK)
                     {
-                        LE_ERROR("ERROR swi_mangoh_bridge_mailbox_processRawCommand() failed(%d)", res);
+                        LE_ERROR("ERROR mangoh_bridge_mailbox_processRawCommand() failed(%d)", res);
                         goto cleanup;
                     }
                 }
-                else if (!strcmp(command, SWI_MANGOH_BRIDGE_MAILBOX_GET_COMMAND))
+                else if (!strcmp(command, MANGOH_BRIDGE_MAILBOX_GET_COMMAND))
                 {
                     LE_DEBUG("--> GET");
-                    res = swi_mangoh_bridge_mailbox_processGetCommand(mailbox, jsonReqData);
+                    res = mangoh_bridge_mailbox_processGetCommand(mailbox, jsonReqData);
                     if (res != LE_OK)
                     {
-                        LE_ERROR("ERROR swi_mangoh_bridge_mailbox_processGetCommand() failed(%d)", res);
+                        LE_ERROR("ERROR mangoh_bridge_mailbox_processGetCommand() failed(%d)", res);
                         goto cleanup;
                     }
                 }
-                else if (!strcmp(command, SWI_MANGOH_BRIDGE_MAILBOX_PUT_COMMAND))
+                else if (!strcmp(command, MANGOH_BRIDGE_MAILBOX_PUT_COMMAND))
                 {
                     LE_DEBUG("--> PUT");
-                    res = swi_mangoh_bridge_mailbox_processPutCommand(mailbox, jsonReqData);
+                    res = mangoh_bridge_mailbox_processPutCommand(mailbox, jsonReqData);
                     if (res != LE_OK)
                     {
-                        LE_ERROR("ERROR swi_mangoh_bridge_mailbox_processPutCommand() failed(%d)", res);
+                        LE_ERROR("ERROR mangoh_bridge_mailbox_processPutCommand() failed(%d)", res);
                         goto cleanup;
                     }
                 }
-                else if (!strcmp(command, SWI_MANGOH_BRIDGE_MAILBOX_DELETE_COMMAND))
+                else if (!strcmp(command, MANGOH_BRIDGE_MAILBOX_DELETE_COMMAND))
                 {
                     LE_DEBUG("--> DELETE");
-                    res = swi_mangoh_bridge_mailbox_processDeleteCommand(mailbox, jsonReqData);
+                    res = mangoh_bridge_mailbox_processDeleteCommand(mailbox, jsonReqData);
                     if (res != LE_OK)
                     {
-                        LE_ERROR("ERROR swi_mangoh_bridge_mailbox_processDeleteCommand() failed(%d)", res);
+                        LE_ERROR("ERROR mangoh_bridge_mailbox_processDeleteCommand() failed(%d)", res);
                         goto cleanup;
                     }
                 }
@@ -874,26 +874,26 @@ static int swi_mangoh_bridge_mailbox_processCommands(swi_mangoh_bridge_mailbox_t
                     LE_ERROR("ERROR invalid command('%s')", command);
 
                     mailbox->clients.info[idx].recvBuffLen = 0;
-                    memset(mailbox->clients.info[idx].rxBuffer, 0, SWI_MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
+                    memset(mailbox->clients.info[idx].rxBuffer, 0, MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
 
                     res = LE_BAD_PARAMETER;
                     goto cleanup;
                 }
 
-                res = swi_mangoh_bridge_json_destroy(&jsonReqData);
+                res = mangoh_bridge_json_destroy(&jsonReqData);
                 if (res != LE_OK)
                 {
-                    LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", res);
+                    LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", res);
                     goto cleanup;
                 }
 
                 LE_ASSERT(!jsonReqData);
             }
-            else if (mailbox->clients.info[idx].recvBuffLen == SWI_MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN)
+            else if (mailbox->clients.info[idx].recvBuffLen == MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN)
             {
-                LE_ERROR("ERROR JSON invalid object size(> %u)", SWI_MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
+                LE_ERROR("ERROR JSON invalid object size(> %u)", MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
                 mailbox->clients.info[idx].recvBuffLen = 0;
-                memset(mailbox->clients.info[idx].rxBuffer, 0, SWI_MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
+                memset(mailbox->clients.info[idx].rxBuffer, 0, MANGOH_BRIDGE_TCP_CLIENT_RECV_BUFFER_LEN);
                 goto cleanup;
             }
             else if (res == LE_UNDERFLOW)
@@ -906,41 +906,41 @@ static int swi_mangoh_bridge_mailbox_processCommands(swi_mangoh_bridge_mailbox_t
 cleanup:
     if (jsonReqData)
     {
-        int32_t err = swi_mangoh_bridge_json_destroy(&jsonReqData);
+        int32_t err = mangoh_bridge_json_destroy(&jsonReqData);
         if (err != LE_OK)
         {
-            LE_ERROR("ERROR swi_mangoh_bridge_json_destroy() failed(%d)", err);
+            LE_ERROR("ERROR mangoh_bridge_json_destroy() failed(%d)", err);
         }
     }
 
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_runner(void* param)
+static int mangoh_bridge_mailbox_runner(void* param)
 {
-    swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
+    mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
 
-    res = swi_mangoh_bridge_tcp_server_acceptNewConnections(&mailbox->server, &mailbox->clients);
+    res = mangoh_bridge_tcp_server_acceptNewConnections(&mailbox->server, &mailbox->clients);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_server_acceptNewConnections() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_server_acceptNewConnections() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_tcp_client_run(&mailbox->clients);
+    res = mangoh_bridge_tcp_client_run(&mailbox->clients);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_client_run() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_client_run() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_mailbox_processCommands(mailbox);
+    res = mangoh_bridge_mailbox_processCommands(mailbox);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_mailbox_processCommands() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_mailbox_processCommands() failed(%d)", res);
         goto cleanup;
     }
 
@@ -948,17 +948,17 @@ cleanup:
     return res;
 }
 
-static int swi_mangoh_bridge_mailbox_reset(void* param)
+static int mangoh_bridge_mailbox_reset(void* param)
 {
-    swi_mangoh_bridge_mailbox_t* mailbox = (swi_mangoh_bridge_mailbox_t*)param;
+    mangoh_bridge_mailbox_t* mailbox = (mangoh_bridge_mailbox_t*)param;
     int32_t res = LE_OK;
 
     LE_ASSERT(mailbox);
 
     uint8_t idx = 0;
-    for (idx = 0; idx < SWI_MANGOH_BRIDGE_SOCKETS_MAX_CLIENTS; idx++)
+    for (idx = 0; idx < MANGOH_BRIDGE_SOCKETS_MAX_CLIENTS; idx++)
     {
-        if (mailbox->clients.info[idx].sockFd != SWI_MANGOH_BRIDGE_SOCKETS_INVALID)
+        if (mailbox->clients.info[idx].sockFd != MANGOH_BRIDGE_SOCKETS_INVALID)
         {
             LE_DEBUG("close socket[%u](%d)", idx, mailbox->clients.info[idx].sockFd);
             res = close(mailbox->clients.info[idx].sockFd);
@@ -969,7 +969,7 @@ static int swi_mangoh_bridge_mailbox_reset(void* param)
                 goto cleanup;
             }
 
-            mailbox->clients.info[idx].sockFd = SWI_MANGOH_BRIDGE_SOCKETS_INVALID;
+            mailbox->clients.info[idx].sockFd = MANGOH_BRIDGE_SOCKETS_INVALID;
             mailbox->clients.info[idx].recvBuffLen = 0;
             mailbox->clients.info[idx].sendBuffLen = 0;
         }
@@ -983,7 +983,7 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_mailbox_init(swi_mangoh_bridge_mailbox_t* mailbox, void* bridge)
+int mangoh_bridge_mailbox_init(mangoh_bridge_mailbox_t* mailbox, void* bridge)
 {
     int32_t res = LE_OK;
 
@@ -993,70 +993,70 @@ int swi_mangoh_bridge_mailbox_init(swi_mangoh_bridge_mailbox_t* mailbox, void* b
     LE_DEBUG("init");
 
     mailbox->bridge = bridge;
-    mailbox->database = le_hashmap_Create("Bridge Mbox", SWI_MANGOH_BRIDGE_MAILBOX_DATA_STORE_SIZE, le_hashmap_HashString, le_hashmap_EqualsString);
+    mailbox->database = le_hashmap_Create("Bridge Mbox", MANGOH_BRIDGE_MAILBOX_DATA_STORE_SIZE, le_hashmap_HashString, le_hashmap_EqualsString);
 
-    swi_mangoh_bridge_tcp_client_init(&mailbox->clients, false);
+    mangoh_bridge_tcp_client_init(&mailbox->clients, false);
 
-    res = swi_mangoh_bridge_tcp_server_start(&mailbox->server, SWI_MANGOH_BRIDGE_MAILBOX_SERVER_IP_ADDR, SWI_MANGOH_BRIDGE_MAILBOX_JSON_SERVER_PORT, SWI_MANGOH_BRIDGE_MAILBOX_SERVER_BACKLOG);
+    res = mangoh_bridge_tcp_server_start(&mailbox->server, MANGOH_BRIDGE_MAILBOX_SERVER_IP_ADDR, MANGOH_BRIDGE_MAILBOX_JSON_SERVER_PORT, MANGOH_BRIDGE_MAILBOX_SERVER_BACKLOG);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_server_start() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_server_start() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(mailbox->bridge, SWI_MANGOH_BRIDGE_MAILBOX_SEND, mailbox, swi_mangoh_bridge_mailbox_send);
+    res = mangoh_bridge_registerCommandProcessor(mailbox->bridge, MANGOH_BRIDGE_MAILBOX_SEND, mailbox, mangoh_bridge_mailbox_send);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(mailbox->bridge, SWI_MANGOH_BRIDGE_MAILBOX_SEND_JSON, mailbox, swi_mangoh_bridge_mailbox_send_json);
+    res = mangoh_bridge_registerCommandProcessor(mailbox->bridge, MANGOH_BRIDGE_MAILBOX_SEND_JSON, mailbox, mangoh_bridge_mailbox_send_json);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(mailbox->bridge, SWI_MANGOH_BRIDGE_MAILBOX_RECV, mailbox, swi_mangoh_bridge_mailbox_recv);
+    res = mangoh_bridge_registerCommandProcessor(mailbox->bridge, MANGOH_BRIDGE_MAILBOX_RECV, mailbox, mangoh_bridge_mailbox_recv);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(mailbox->bridge, SWI_MANGOH_BRIDGE_MAILBOX_AVAILABLE, mailbox, swi_mangoh_bridge_mailbox_available);
+    res = mangoh_bridge_registerCommandProcessor(mailbox->bridge, MANGOH_BRIDGE_MAILBOX_AVAILABLE, mailbox, mangoh_bridge_mailbox_available);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(mailbox->bridge, SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_PUT, mailbox, swi_mangoh_bridge_mailbox_datastorePut);
+    res = mangoh_bridge_registerCommandProcessor(mailbox->bridge, MANGOH_BRIDGE_MAILBOX_DATASTORE_PUT, mailbox, mangoh_bridge_mailbox_datastorePut);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerCommandProcessor(mailbox->bridge, SWI_MANGOH_BRIDGE_MAILBOX_DATASTORE_GET, mailbox, swi_mangoh_bridge_mailbox_datastoreGet);
+    res = mangoh_bridge_registerCommandProcessor(mailbox->bridge, MANGOH_BRIDGE_MAILBOX_DATASTORE_GET, mailbox, mangoh_bridge_mailbox_datastoreGet);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerCommandProcessor() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerCommandProcessor() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerRunner(mailbox->bridge, mailbox, swi_mangoh_bridge_mailbox_runner);
+    res = mangoh_bridge_registerRunner(mailbox->bridge, mailbox, mangoh_bridge_mailbox_runner);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerRunner() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerRunner() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_registerReset(mailbox->bridge, mailbox, swi_mangoh_bridge_mailbox_reset);
+    res = mangoh_bridge_registerReset(mailbox->bridge, mailbox, mangoh_bridge_mailbox_reset);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_registerReset() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_registerReset() failed(%d)", res);
         goto cleanup;
     }
 
@@ -1065,21 +1065,21 @@ cleanup:
     return res;
 }
 
-int swi_mangoh_bridge_mailbox_destroy(swi_mangoh_bridge_mailbox_t* mailbox)
+int mangoh_bridge_mailbox_destroy(mangoh_bridge_mailbox_t* mailbox)
 {
     int32_t res = LE_OK;
 
-    res = swi_mangoh_bridge_tcp_client_destroy(&mailbox->clients);
+    res = mangoh_bridge_tcp_client_destroy(&mailbox->clients);
     if (res < 0)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_server_stop() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_server_stop() failed(%d)", res);
         goto cleanup;
     }
 
-    res = swi_mangoh_bridge_tcp_server_stop(&mailbox->server);
+    res = mangoh_bridge_tcp_server_stop(&mailbox->server);
     if (res != LE_OK)
     {
-        LE_ERROR("ERROR swi_mangoh_bridge_tcp_server_stop() failed(%d)", res);
+        LE_ERROR("ERROR mangoh_bridge_tcp_server_stop() failed(%d)", res);
     }
 
 cleanup:
