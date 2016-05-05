@@ -280,7 +280,7 @@ cleanup:
 static int mangoh_bridge_air_vantage_pushFloat(void* param, const unsigned char* data, uint32_t size)
 {
     mangoh_bridge_air_vantage_t* airVantage = (mangoh_bridge_air_vantage_t*)param;
-    float fVal = 0;
+    double fVal = 0;
     int32_t res = LE_OK;
 
     LE_ASSERT(airVantage);
@@ -505,7 +505,7 @@ static void mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t type,
     }
     case DATAROUTER_FLOAT:
     {
-      float value = 0;
+      double value = 0;
       dataRouter_ReadFloat(key, &value, &timestamp);
 
       time_t ts = timestamp;
