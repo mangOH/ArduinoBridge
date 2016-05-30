@@ -1,294 +1,197 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
-
-<app:application
- xmlns:app="http://www.sierrawireless.com/airvantage/application/1.0"
-        type="mangoh testing"
-        name="mangOH testing"
-        revision="0.0.2">
- <capabilities>
-
-  <communication>
-   <protocol comm-id="IMEI" type="MQTT" />
-  </communication>
-
-  <data>
-   <encoding type="MQTT">
-    <asset default-label="Greenhouse" id="greenhouse">
-      <variable default-label="Temperature" path="temperature"
-                                      type="double"/>
-      <variable default-label="Humidity" path="humidity"
-                                      type="double"/>
-      <variable default-label="Luminosity" path="luminosity"
-                                      type="int"/>
-      <variable default-label="Noise" path="noise"
-                                      type="int"/>
-      <variable default-label="Water" path="water"
-                                      type="boolean"/>
-      <variable default-label="Dust" path="dust"
-                                      type="double"/>
-      <variable default-label="Oxygen" path="oxygen"
-                                      type="double"/>
-
-     </asset>
-   </encoding>
-  </data>
-  </capabilities>
-</app:application>
 /*
-  Copyright (c) 2016 Sierra Wireless. All right reserved.
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+  Multi-sensor input connected to mangOH platform
+  The program detects the following sensors:
+  a. Temperature humidity using DHT22 on pin D2 (http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro)
+  b. Dust sensor using Grove Dust sensor on pin D8 (http://www.seeedstudio.com/wiki/Grove_-_Dust_Sensor)
+  c. Oxygen sensor using Grove Oxygen sensor on pin A0 (http://www.seeedstudio.com/wiki/Grove_-_Gas_Sensor(O%E2%82%82))
+  d. Light sensor using Grove Light sensor on pin A1 (http://www.seeedstudio.com/wiki/Grove_-_Light_Sensor)
+  e. Sound sensor using Grove Sound Sensor  on pin A2 ( http://www.seeedstudio.com/wiki/Grove_-_Sound_Sensor)
+  f. Water sensor using Grove water sensor on pin D6  (http://www.seeedstudio.com/wiki/Grove_-_Water_Sensor)
+  Written by CTO office Sierra
 */
+
 
 #include <SwiBridge.h>
-
-void SwiBridgeClass::startSession(const String& url, const String& pw, uint8_t avPush, storage_e storage)
-{
-  uint8_t urlLen = url.length();
-  uint8_t cmd[] = {'0', avPush, storage, urlLen };
-  bridge.transfer(cmd, 4, (const uint8_t*)url.c_str(), url.length(), (const uint8_t*)pw.c_str(), pw.length(), NULL, 0);
-}
-
-void SwiBridgeClass::endSession(void) {
-  uint8_t cmd[] = {'1'};
-  bridge.transfer(cmd, 1, NULL, 0);
-}
-
-void SwiBridgeClass::subscribe(const String& name) {
-  uint8_t nameLen = name.length();
-  uint8_t cmd[] = {'2', nameLen };
-  bridge.transfer(cmd, 2, (const uint8_t*)name.c_str(), name.length(), NULL, 0);
-}
-
-void SwiBridgeClass::pushBoolean(const String& name, uint8_t value) {
-  uint8_t nameLen = name.length();
-  uint8_t cmd[] = {'3', nameLen };
-  bridge.transfer(cmd, 2, (const uint8_t*)name.c_str(), name.length(), (uint8_t*)&value, sizeof(value), NULL, 0);
-}
-
-void SwiBridgeClass::pushInteger(const String& name, int value) {
-  uint8_t nameLen = name.length();
-  uint8_t cmd[] = {'4', nameLen };
-  bridge.transfer(cmd, 2, (const uint8_t*)name.c_str(), name.length(), (uint8_t*)&value, sizeof(value), NULL, 0);
-}
-
-void SwiBridgeClass::pushFloat(const String& name, uint8_t precision, float value) {
-  struct floatVal {
-    uint8_t precision;
-    int32_t val;
-  };
-  struct floatVal fVal = {0};
-  uint8_t i = 0;
-  uint8_t nameLen = name.length();
-  uint8_t cmd[] = {'5', nameLen };
-
-  fVal.precision = precision;
-  for (i = 0; i < precision; i++) value *= 10;
-  fVal.val = value;
-  bridge.transfer(cmd, 2, (const uint8_t*)name.c_str(), name.length(), (uint8_t*)&fVal, sizeof(fVal), NULL, 0);
-}
-
-void SwiBridgeClass::pushString(const String& name, const String& value) {
-  uint8_t nameLen = name.length();
-  uint8_t cmd[] = {'6', nameLen };
-  bridge.transfer(cmd, 2, (const uint8_t*)name.c_str(), name.length(), (const uint8_t*)value.c_str(), value.length(), NULL, 0);
-}
-
-unsigned int SwiBridgeClass::dataAvailable() {
-  uint8_t tmp[] = {'7'};
-  uint8_t res[2] = {0};
-  bridge.transfer(tmp, 1, res, 2);
-  return (res[0] << 8) + res[1];
-}
-
-unsigned int SwiBridgeClass::readMessage(uint8_t *buff, unsigned int size) {
-  uint8_t tmp[] = {'8'};
-  return bridge.transfer(tmp, 1, buff, size);
-}
-
-void SwiBridgeClass::readMessage(String &str, unsigned int maxLength) {
-  uint8_t tmp[] = {'8'};
-  // XXX: Is there a better way to create the string?
-  uint8_t buff[maxLength + 1];
-  int l = bridge.transfer(tmp, 1, buff, maxLength);
-  buff[l] = 0;
-  str = (const char *)buff;
-}
-
-String SwiBridgeClass::parseTimestamp(const String& name, const String& msg) {
-  String ret;
-
-  int32_t nameIdx = msg.indexOf(name);
-  if (msg.startsWith("|") && (nameIdx != -1)) {
-    String valueStr = msg.substring(nameIdx + name.length() + 1);
-    ret = valueStr.substring(valueStr.indexOf('|') + 1);
-    if (ret.indexOf('|') != -1) {
-      ret = ret.substring(0, ret.indexOf('|'));
-    }
-  }
-
-  return ret;
-}
-
-bool SwiBridgeClass::parseBoolean(const String& name, const String& msg) {
-  bool ret = false;
-
-  int32_t nameIdx = msg.indexOf(name);
-  if (msg.startsWith("|") && (nameIdx != -1)) {
-    String valueStr = msg.substring(nameIdx + name.length() + 1);
-    if (valueStr.indexOf('|') != -1) {
-      valueStr = valueStr.substring(0, valueStr.indexOf('|'));
-    }
-
-    ret = valueStr.toInt() ? true:false;
-  }
-
-  return ret;
-}
-
-long SwiBridgeClass::parseInteger(const String& name, const String& msg) {
-  long ret = 0;
-
-  int32_t nameIdx = msg.indexOf(name);
-  if (msg.startsWith("|") && (nameIdx != -1)) {
-    String valueStr = msg.substring(nameIdx + name.length() + 1);
-    if (valueStr.indexOf('|') != -1) {
-      valueStr = valueStr.substring(0, valueStr.indexOf('|'));
-    }
-
-    ret = valueStr.toInt();
-  }
-
-  return ret;
-}
-
-float SwiBridgeClass::parseFloat(const String& name, const String& msg) {
-  float ret = 0.0;
-
-  int32_t nameIdx = msg.indexOf(name);
-  if (msg.startsWith("|") && (nameIdx != -1)) {
-    String valueStr = msg.substring(nameIdx + name.length() + 1);
-    if (valueStr.indexOf('|') != -1) {
-      valueStr = valueStr.substring(0, valueStr.indexOf('|'));
-    }
-    ret = valueStr.toFloat();
-  }
-
-  return ret;
-}
-
-String SwiBridgeClass::parseString(const String& name, const String& msg) {
-  String ret;
-
-  int32_t nameIdx = msg.indexOf(name);
-  if (msg.startsWith("|") && (nameIdx != -1)) {
-    String valueStr = msg.substring(nameIdx + name.length() + 1);
-    if (valueStr.indexOf('|') != -1) {
-      ret = valueStr.substring(0, valueStr.indexOf('|'));
-    }
-  }
-
-  return ret;
-}
-
-SwiBridgeClass SwiBridge(Bridge);
-/*
-  Copyright (c) 2016 Sierra Wireless. All right reserved.
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-*/
-
-#ifndef _SWI_BRIDGE_CLASS_H_INCLUDED_
-#define _SWI_BRIDGE_CLASS_H_INCLUDED_
-
+#include <DHT.h>
 #include <Bridge.h>
+#include <BridgeClient.h>
+#include <BridgeServer.h>
+#include <BridgeSSLClient.h>
+#include <BridgeUdp.h>
+#include <Console.h>
+#include <FileIO.h>
+#include <HttpClient.h>
+#include <Mailbox.h>
+#include <Process.h>
+#include <YunClient.h>
+#include <YunServer.h>
 
-typedef enum _storage_e {
-  CACHE = 0,
-  PERSIST,
-  PERSIST_ENCRYPT,
-} storage_e;
+#define AV_URL                "na.airvantage.net" // replace with url of your airvantage accounr
+#define AV_PASSWORD           "SwiBridge" // you can change this here and make it the same as the one on application model
+#define APP_NAME              "Greenhouse"
+#define APP_TEMPERATURE       "temperature"
+#define APP_HUMIDITY          "humidity"
+#define APP_LUMINOSITY        "luminosity"
+#define APP_NOISE_LEVEL       "noise"
+#define APP_WATER             "water"
+#define APP_DUST              "dust"
+#define APP_OXYGEN            "oxygen"
+#define APP_LIGHT             "light"
+#define APP_AIRCONDITIONER    "aircondition"
 
-class SwiBridgeClass {
-  public:
-    SwiBridgeClass(BridgeClass &b = Bridge) : bridge(b) { }
+#define Version     10 // choose as per board provided
+#define DHTPIN A0     // what pin we're connected to
+#define DUSTPIN 8    // Dust sensor is connected to digital pin 8
+#define OXYGENPIN A3 //Oxygen sensor is connected to pin A3
+#define LIGHTPIN A1  // Light sensor is connected to pin A1
+#define SOUNDPIN A2 // Sound sensor is connected pin A2
+#define WATERPIN 6  // Water sensor is on pin 6
 
-    void begin() { }
-    void end() { }
+// Uncomment whatever type you're using!
+#define DHTTYPE DHT11   // DHT 11 
+//#define DHTTYPE DHT22   // DHT 22  (AM2302)
+//#define DHTTYPE DHT21   // DHT 21 (AM2301)
 
-    // Start Session with Mangoh
-    void startSession(const String&, const String&, uint8_t, storage_e);
+// Readings for DHT sensor
+DHT dht(DHTPIN, DHTTYPE);
 
-    // EndSession with Mangoh
-    void endSession(void);
+//  Readings for Oxygen sensor
+#if Version==11
+const int AMP   = 121;
+#elif Version==10
+const int AMP   = 201;
+#endif
+float sensorValue;
+float sensorVoltage;
+float value_O2;
+const float K_O2    = 6.64;
 
-    // Susbscribe to receive data updates
-    void subscribe(const String&);
+// Readings for Dust sensor
+unsigned long duration;
+unsigned long starttime;
+unsigned long sampletime_ms = 30000;
+unsigned long lowpulseoccupancy = 0;
+float ratio = 0;
+float concentration = 0;
 
-    // Push Boolean value
-    void pushBoolean(const String&, uint8_t);
 
-    // Push Integer value
-    void pushInteger(const String&, int);
+// Readings for light sensor
+int LightSensorValue;
+float Rsensor;
 
-    // Push Float value
-    void pushFloat(const String&, uint8_t, float);
+// Readings for sound sensor
+int SoundSensorValue;
 
-    // Push String value
-    void pushString(const String&, const String&);
+// Reading for watersenor
+bool waterValue;
 
-    // Return the size of data available
-    unsigned int dataAvailable(void);
 
-    // Receive a message and store it inside a buffer
-    unsigned int readMessage(uint8_t*, unsigned int size);
+void setup() {
+  Serial.begin(9600);
+  Serial.println("mangOH multi-sensors tutorial");
 
-    // Receive a message and store it inside a String
-    void readMessage(String&, unsigned int maxLength = 128);
+  Serial.println("Starting the bridge");
+  Bridge.begin(115200);
 
-    // Parse timestamp from received message
-    String parseTimestamp(const String&, const String&);
+  dht.begin();
 
-    // Parse Boolean value from received message
-    bool parseBoolean(const String&, const String&);
+  starttime = millis();//get the current time;
 
-    // Parse Integer value from received message
-    long parseInteger(const String&, const String&);
 
-    // Parse Float value from received message
-    float parseFloat(const String&, const String&);
+  Serial.print("Start Session: ");
+  Serial.print(AV_URL);
+  Serial.print(" ");
+  Serial.println(AV_PASSWORD);
+  SwiBridge.startSession(AV_URL, AV_PASSWORD, 1, CACHE);
 
-    // Parse String value from received message
-    String parseString(const String&, const String&);
+}
 
-  private:
-    BridgeClass &bridge;
-};
+void loop() {
+  // Reading temperature or humidity takes about 250 milliseconds!
+  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
 
-extern SwiBridgeClass SwiBridge;
+  // Oxygen sensor calculations
+  sensorValue = analogRead(OXYGENPIN);
+  sensorVoltage = (sensorValue / 1024.0) * 5.0;
+  sensorVoltage = sensorVoltage / (float)AMP * 10000.0;
+  value_O2 = sensorVoltage / K_O2;
 
-#endif // _SWI_BRIDGE_CLASS_H_INCLUDED_
+  Serial.print("Oxygen level is  = ");
+  Serial.println(value_O2);
+
+  // check if returns are valid, if they are NaN (not a number) then something went wrong!
+  if (isnan(t) || isnan(h)) {
+    Serial.println("Failed to read from DHT");
+  } else {
+    Serial.print("Humidity: ");
+    Serial.print(h);
+    Serial.print(" %\t");
+    Serial.print("Temperature: ");
+    Serial.print(t);
+    Serial.println(" *C");
+
+
+    Serial.print("Quality of O2 is ");
+    Serial.print(value_O2, 1);
+    Serial.println("%");
+    duration = pulseIn(DUSTPIN, LOW);
+    lowpulseoccupancy = lowpulseoccupancy + duration;
+    if ((millis() - starttime) >= sampletime_ms) //if the sample time = = 30s
+    {
+      ratio = lowpulseoccupancy / (sampletime_ms * 10.0); // Integer percentage 0=&gt;100
+      concentration = 1.1 * pow(ratio, 3) - 3.8 * pow(ratio, 2) + 520 * ratio + 0.62; // using spec sheet curve
+      //Serial.print(lowpulseoccupancy);
+      // Serial.print(",");
+      //Serial.print(ratio);
+      //Serial.print(",");
+      Serial.print("dust level is  = ");
+      Serial.print(concentration);
+      Serial.println(" pcs/0.01cf");
+      // Serial.println("\n");
+      lowpulseoccupancy = 0;
+      starttime = millis();
+    }
+
+
+    // Light sensor readings
+    LightSensorValue = analogRead(LIGHTPIN);
+    Rsensor = (float)(1023 - LightSensorValue) * 10 / LightSensorValue ;
+    Serial.print("the Light sensor reading is ");
+    Serial.println(LightSensorValue);
+    Serial.print("the Light sensor resistance is ");
+    Serial.println(Rsensor, DEC); //show the light intensity on the serial monitor
+
+    // Sound sensor readings
+    SoundSensorValue = analogRead(SOUNDPIN);
+    Serial.print("the Sound sensor reading is ");
+    Serial.println(SoundSensorValue);
+    Serial.println("\n");
+
+    // Water sensor reading
+    if (digitalRead(WATERPIN) == LOW)
+    {
+      waterValue = true;
+    }
+    else
+    {
+      waterValue = false;
+    }
+    Serial.print(" Water present is ");
+    Serial.println( waterValue);
+
+    SwiBridge.pushFloat(APP_NAME "." APP_HUMIDITY, 3, h);
+    SwiBridge.pushFloat(APP_NAME "." APP_TEMPERATURE, 3, t);
+    SwiBridge.pushFloat(APP_NAME "." APP_DUST, 3, concentration);
+    SwiBridge.pushFloat(APP_NAME "." APP_OXYGEN, 3, value_O2);
+    SwiBridge.pushInteger(APP_NAME "." APP_LUMINOSITY, LightSensorValue);
+    SwiBridge.pushInteger(APP_NAME "." APP_NOISE_LEVEL, SoundSensorValue);
+    SwiBridge.pushBoolean(APP_NAME "." APP_WATER, waterValue);
+
+
+  }
+
+  delay(20000);
+}
+
