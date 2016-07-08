@@ -621,6 +621,9 @@ static int mangoh_bridge_start(mangoh_bridge_t* bridge)
         le_fdMonitor_SetContextPtr(bridge->fdMonitor, bridge);
     }
 
+    LE_FATAL_IF(
+      mangoh_muxCtrl_ArduinoDeassertReset() != LE_OK, "Couldn't deassert the Arduino reset");
+
 cleanup:
     LE_INFO("bridge started(%d)", res);
     return res;
@@ -681,6 +684,10 @@ static int mangoh_bridge_init(mangoh_bridge_t* bridge)
     memset(bridge, 0, sizeof(mangoh_bridge_t));
 
     BridgeTraceRef = le_log_GetTraceRef("Bridge");
+
+    LE_FATAL_IF(mangoh_muxCtrl_ArduinoAssertReset() != LE_OK, "Couldn't assert the Arduino reset");
+    // Sleep for a while to ensure that the Arduino catches the reset
+    usleep(300);
 
     memcpy(bridge->packet.version, version, sizeof(version));
     memcpy(bridge->packet.reset, reset, sizeof(reset));

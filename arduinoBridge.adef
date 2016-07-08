@@ -25,6 +25,7 @@ processes:
 bindings:
 {
     arduinoBridge.bridgeComponent.dataRouter -> dataRouter.dataRouter
+    arduinoBridge.bridgeComponent.mangoh_muxCtrl -> muxCtrlService.mangoh_muxCtrl
 }
 
 requires:
