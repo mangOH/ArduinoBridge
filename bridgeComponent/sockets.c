@@ -799,10 +799,10 @@ static int mangoh_bridge_sockets_checkClients(uint16_t idx, mangoh_bridge_socket
     {
         uint8_t data[MANGOH_BRIDGE_SOCKETS_BUFF_LEN] = {0};
         ssize_t bytesRx = recv(clients->info[idx].sockFd, data, MANGOH_BRIDGE_SOCKETS_BUFF_LEN, 0);
-        LE_DEBUG("socket[%u](%d) recv(%d)", idx, clients->info[idx].sockFd, bytesRx);
+        LE_DEBUG("socket[%u](%d) recv(%zd)", idx, clients->info[idx].sockFd, bytesRx);
         if (bytesRx < 0)
         {
-            LE_ERROR("ERROR recv() socket(%d) failed(%d/%d)", clients->info[idx].sockFd, bytesRx, errno);
+            LE_ERROR("ERROR recv() socket(%d) failed(%zd/%d)", clients->info[idx].sockFd, bytesRx, errno);
 
             res = mangoh_bridge_sockets_closeClient(&clients->info[idx]);
             if (res != LE_OK)
@@ -825,7 +825,7 @@ static int mangoh_bridge_sockets_checkClients(uint16_t idx, mangoh_bridge_socket
 
             memcpy(&clients->info[idx].rxBuff.data[clients->info[idx].rxBuff.len], data, bytesRx);
             clients->info[idx].rxBuff.len += bytesRx;
-            LE_DEBUG("socket[%u](%d) Rx buffer length(%u)", idx, clients->info[idx].sockFd, clients->info[idx].rxBuff.len);
+            LE_DEBUG("socket[%u](%d) Rx buffer length(%d)", idx, clients->info[idx].sockFd, clients->info[idx].rxBuff.len);
         }
     }
 
@@ -835,10 +835,10 @@ static int mangoh_bridge_sockets_checkClients(uint16_t idx, mangoh_bridge_socket
         if (clients->info[idx].txBuff.len)
         {
             ssize_t bytesTx = send(clients->info[idx].sockFd, clients->info[idx].txBuff.data, clients->info[idx].txBuff.len, 0);
-            LE_DEBUG("socket[%u](%d) send(%d)", idx, clients->info[idx].sockFd, bytesTx);
+            LE_DEBUG("socket[%u](%d) send(%zd)", idx, clients->info[idx].sockFd, bytesTx);
             if (bytesTx < 0)
             {
-                LE_ERROR("ERROR socket[%u](%d) send() failed(%d/%d)", idx, clients->info[idx].sockFd, bytesTx, errno);
+                LE_ERROR("ERROR socket[%u](%d) send() failed(%zd/%d)", idx, clients->info[idx].sockFd, bytesTx, errno);
 
                 res = mangoh_bridge_sockets_closeClient(&clients->info[idx]);
                 if (res != LE_OK)

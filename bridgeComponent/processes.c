@@ -302,10 +302,10 @@ static int mangoh_bridge_processes_readOutput(void* param, const unsigned char* 
         ssize_t bytesRead = read(processes->list[id].outfp,
                 &processes->list[id].outputBuff[processes->list[id].outputBuffLen],
                 sizeof(processes->list[id].outputBuff) - processes->list[id].outputBuffLen);
-        LE_DEBUG("outfp(%d) read(%d)", processes->list[id].outfp, bytesRead);
+        LE_DEBUG("outfp(%d) read(%zd)", processes->list[id].outfp, bytesRead);
         if (bytesRead < 0)
         {
-            LE_ERROR("ERROR read() failed(%d/%d)", bytesRead, errno);
+            LE_ERROR("ERROR read() failed(%zd/%d)", bytesRead, errno);
             res = LE_IO_ERROR;
             goto cleanup;
         }
@@ -318,7 +318,7 @@ static int mangoh_bridge_processes_readOutput(void* param, const unsigned char* 
             mangoh_bridge_process_read_output_rsp_t* const rsp = (mangoh_bridge_process_read_output_rsp_t*)((mangoh_bridge_t*)processes->bridge)->packet.msg.data;
 
             len = (processes->list[id].outputBuffLen > reqLen) ? reqLen:processes->list[id].outputBuffLen;
-            LE_DEBUG("len(%u)", len);
+            LE_DEBUG("len(%zu)", len);
             memcpy(rsp->data, processes->list[id].outputBuff, len);
             memmove(processes->list[id].outputBuff, &processes->list[id].outputBuff[len], processes->list[id].outputBuffLen - len);
             processes->list[id].outputBuffLen -= len;
@@ -361,10 +361,10 @@ static int mangoh_bridge_processes_availableOutput(void* param, const unsigned c
         ssize_t bytesRead = read(processes->list[req->id].outfp,
                 &processes->list[req->id].outputBuff[processes->list[req->id].outputBuffLen],
                 sizeof(processes->list[req->id].outputBuff) - processes->list[req->id].outputBuffLen);
-        LE_DEBUG("outfp(%d) read(%d)", processes->list[req->id].outfp, bytesRead);
+        LE_DEBUG("outfp(%d) read(%zd)", processes->list[req->id].outfp, bytesRead);
         if (bytesRead < 0)
         {
-            LE_ERROR("ERROR read() failed(%d/%d)", bytesRead, errno);
+            LE_ERROR("ERROR read() failed(%zd/%d)", bytesRead, errno);
             res = LE_IO_ERROR;
             goto cleanup;
         }
@@ -404,10 +404,10 @@ static int mangoh_bridge_processes_writeInput(void* param, const unsigned char* 
     if ((req->id >= MANGOH_BRIDGE_PROCESSES_NUM_IDS) || (processes->list[req->id].pid != MANGOH_BRIDGE_PROCESSES_INVALID_PID))
     {
         ssize_t bytesWrite = write(processes->list[req->id].infp, req->data, size - sizeof(req->id));
-        LE_DEBUG("infp(%d) write(%d)", processes->list[req->id].infp, bytesWrite);
+        LE_DEBUG("infp(%d) write(%zd)", processes->list[req->id].infp, bytesWrite);
         if (bytesWrite < 0)
         {
-            LE_ERROR("ERROR write() failed(%d/%d)", bytesWrite, errno);
+            LE_ERROR("ERROR write() failed(%zd/%d)", bytesWrite, errno);
             res = LE_IO_ERROR;
             goto cleanup;
         }

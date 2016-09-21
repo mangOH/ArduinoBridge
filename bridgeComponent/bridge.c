@@ -63,7 +63,7 @@ static int mangoh_bridge_read(mangoh_bridge_t* bridge, unsigned char* data, unsi
             }
             else
             {
-                LE_ERROR("ERROR read() fd(%d) failed(%d/%d)", bridge->serialFd, bytesRead, errno);
+                LE_ERROR("ERROR read() fd(%d) failed(%zd/%d)", bridge->serialFd, bytesRead, errno);
                 sleep(1);
 
                 res = mangoh_bridge_stop(bridge);
@@ -117,7 +117,7 @@ static int mangoh_bridge_write(const mangoh_bridge_t* bridge, const unsigned cha
         ssize_t bytesWrite = write(bridge->serialFd, ptr, msgLen);
         if (bytesWrite < 0)
         {
-            LE_ERROR("ERROR write() failed(%d/%d)", bytesWrite, errno);
+            LE_ERROR("ERROR write() failed(%zd/%d)", bytesWrite, errno);
             res = LE_IO_ERROR;
             goto cleanup;
         }
@@ -267,7 +267,7 @@ static int mangoh_bridge_close(mangoh_bridge_t* bridge)
     LE_INFO("---> CLOSE");
     if (bridge->packet.msg.len != sizeof(bridge->packet.close))
     {
-        LE_ERROR("ERROR invalid close command length(%u != %u)", bridge->packet.msg.len, sizeof(bridge->packet.close));
+        LE_ERROR("ERROR invalid close command length(%u != %zu)", bridge->packet.msg.len, sizeof(bridge->packet.close));
         res = LE_BAD_PARAMETER;
         goto cleanup;
     }
@@ -295,7 +295,7 @@ static int mangoh_bridge_reset(mangoh_bridge_t* bridge)
     LE_INFO("---> RESET");
     if (bridge->packet.msg.len != sizeof(bridge->packet.reset) + MANGOH_BRIDGE_PACKET_VERSION_SIZE)
     {
-        LE_ERROR("ERROR invalid reset command length(%u != %u)",
+        LE_ERROR("ERROR invalid reset command length(%u != %zu)",
                 bridge->packet.msg.len, sizeof(bridge->packet.reset) + MANGOH_BRIDGE_PACKET_VERSION_SIZE);
 
         res = mangoh_bridge_sendNack(bridge);

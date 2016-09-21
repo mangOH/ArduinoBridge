@@ -527,7 +527,7 @@ static void mangoh_bridge_air_vantage_dataUpdateHdlr(dataRouter_DataType_t type,
     len = strlen(msg);
     if (len + airVantage->rxBuffLen > sizeof(airVantage->rxBuffer))
     {
-        LE_ERROR("ERROR Rx buffer overflow(%u + %u > %u)", len, airVantage->rxBuffLen, sizeof(airVantage->rxBuffer));
+        LE_ERROR("ERROR Rx buffer overflow(%u + %u > %zu)", len, airVantage->rxBuffLen, sizeof(airVantage->rxBuffer));
         goto cleanup;
     }
 

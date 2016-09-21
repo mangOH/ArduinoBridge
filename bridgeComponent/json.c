@@ -496,7 +496,7 @@ static int mangoh_bridge_json_readNumber(uint8_t const** data, uint32_t* len, ma
         (*jsonData)->data.iVal = atoi((const char*)*data);
         (*jsonData)->len = sizeof((*jsonData)->data.iVal);
         (*jsonData)->type = MANGOH_BRIDGE_JSON_DATA_TYPE_INT;
-        LE_DEBUG("INTEGER(%lld)", (*jsonData)->data.iVal);
+        LE_DEBUG("INTEGER(%" PRId64 ")", (*jsonData)->data.iVal);
     }
 
     *data = ptr;
@@ -884,7 +884,7 @@ static int mangoh_bridge_json_writeInteger(const mangoh_bridge_json_data_t* json
     LE_ASSERT(len);
 
     char buffer[MANGOH_BRIDGE_JSON_INTEGER_MAX_LEN] = {0};
-    snprintf(buffer, MANGOH_BRIDGE_JSON_INTEGER_MAX_LEN, "%lld", jsonData->data.iVal);
+    snprintf(buffer, MANGOH_BRIDGE_JSON_INTEGER_MAX_LEN, "%" PRId64, jsonData->data.iVal);
 
     const uint32_t size = strlen(buffer);
     res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);

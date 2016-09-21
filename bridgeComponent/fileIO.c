@@ -126,7 +126,7 @@ static int mangoh_bridge_fileio_write(void* param, const unsigned char* data, ui
     ssize_t bytesWrite = write(fileio->fdList[req->fd], req->buffer, numBytes);
     if (bytesWrite != numBytes)
     {
-        LE_ERROR("ERROR write() fd[%u](%d) failed(%d/%d)",  req->fd, fileio->fdList[req->fd], bytesWrite, errno);
+        LE_ERROR("ERROR write() fd[%u](%d) failed(%zd/%d)",  req->fd, fileio->fdList[req->fd], bytesWrite, errno);
 
         res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
@@ -139,7 +139,7 @@ static int mangoh_bridge_fileio_write(void* param, const unsigned char* data, ui
         goto cleanup;
     }
 
-    LE_DEBUG("fd[%u](%d), result(%d/%d)", req->fd, fileio->fdList[req->fd], bytesWrite, res);
+    LE_DEBUG("fd[%u](%d), result(%zd/%d)", req->fd, fileio->fdList[req->fd], bytesWrite, res);
     mangoh_bridge_fileio_write_rsp_t* const rsp = (mangoh_bridge_fileio_write_rsp_t*)((mangoh_bridge_t*)fileio->bridge)->packet.msg.data;
     rsp->result = res;
     res = mangoh_bridge_sendResult(fileio->bridge, sizeof(mangoh_bridge_fileio_write_rsp_t));
@@ -373,7 +373,7 @@ static int mangoh_bridge_fileio_read(void* param, const unsigned char* data, uin
     const ssize_t bytesRead = read(fileio->fdList[req->fd], rsp->data, req->size);
     if (bytesRead < 0)
     {
-        LE_ERROR("ERROR read() fd[%u](%d) failed(%d/%d)",  req->fd, fileio->fdList[req->fd], bytesRead, errno);
+        LE_ERROR("ERROR read() fd[%u](%d) failed(%zd/%d)",  req->fd, fileio->fdList[req->fd], bytesRead, errno);
 
         res = mangoh_bridge_sendNack(fileio->bridge);
         if (res != LE_OK)
