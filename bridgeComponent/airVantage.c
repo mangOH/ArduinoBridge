@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * <HR>
+ *
+ * Copyright (C) Sierra Wireless, Inc. Use of this work is subject to license.
+ */
+
 #include <arpa/inet.h>
 #include "legato.h"
 #include "bridge.h"

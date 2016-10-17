@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * <HR>
+ *
+ * Copyright (C) Sierra Wireless, Inc. Use of this work is subject to license.
+ */
+
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
