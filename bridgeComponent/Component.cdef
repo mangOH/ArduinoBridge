@@ -18,7 +18,7 @@ requires:
 {
     api:
     {
-        ${MANGOH_ROOT}/apps/DataRouter/dataRouter.api
-        ${MANGOH_ROOT}/apps/MuxControl/mangoh_muxCtrl.api
+        dataRouter.api
+        mangoh_muxCtrl.api
     }
 }
