@@ -950,10 +950,19 @@ static int mangoh_bridge_json_writeUnicode(const mangoh_bridge_json_data_t* json
     LE_ASSERT(len);
 
     char unicodeStr[MANGOH_BRIDGE_JSON_UNICODE_BUFFER_LEN + strlen("\\u") + 1];
-    snprintf(unicodeStr, MANGOH_BRIDGE_JSON_UNICODE_BUFFER_LEN, "\\u%x%x%x%x",
-            jsonData->data.unicodeVal.bytes[0], jsonData->data.unicodeVal.bytes[1], jsonData->data.unicodeVal.bytes[2], jsonData->data.unicodeVal.bytes[3]);
+    const int size = snprintf(unicodeStr,
+                              sizeof(unicodeStr),
+                              "\\u%x%x%x%x",
+                              jsonData->data.unicodeVal.bytes[0],
+                              jsonData->data.unicodeVal.bytes[1],
+                              jsonData->data.unicodeVal.bytes[2],
+                              jsonData->data.unicodeVal.bytes[3]);
+    if (size >= sizeof(unicodeStr))
+    {
+        LE_ERROR("unicodeStr buffer too small for string of length %d", size);
+        goto cleanup;
+    }
 
-    const uint32_t size = strlen(unicodeStr);
     res = mangoh_bridge_json_checkOutputBufferSize(buff, ptr, allocLen, size);
     if (res != LE_OK)
     {
