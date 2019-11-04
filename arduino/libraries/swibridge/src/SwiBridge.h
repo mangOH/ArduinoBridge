@@ -34,10 +34,10 @@ class SwiBridgeClass {
     void begin() { }
     void end() { }
 
-    // Start Session with Mangoh
+    // Start Session with mangOH
     void startSession(const String&, const String&, uint8_t, storage_e);
 
-    // EndSession with Mangoh
+    // EndSession with mangOH
     void endSession(void);
 
     // Susbscribe to receive data updates

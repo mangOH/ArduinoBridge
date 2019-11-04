@@ -966,7 +966,7 @@ COMPONENT_INIT
 {
     int32_t res = LE_OK;
 
-    LE_INFO("MangOH Arduino Bridge Service Starting");
+    LE_INFO("mangOH Arduino Bridge Service Starting");
 
     le_sig_Block(SIGTERM);
     le_sig_SetEventHandler(SIGTERM, mangoh_bridge_SigTermEventHandler);
